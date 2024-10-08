@@ -388,7 +388,7 @@ fun SearchItemPreview() {
         name = "Hello",
         url = "https://anuke.itch.io/mindustry",
         image = "https://img.itch.zone/aW1nLzE2ODU1NzU3LnBuZw==/300x240%23c/VS4P%2Bb.png",
-        platforms = setOf(Platform.WINDOWS, Platform.ANDROID),
+        platforms = setOf(Platform.WINDOWS, Platform.ANDROID, Platform.LINUX, Platform.WEB, Platform.MACOS),
         updatedTime = LocalDateTime.now(),
         publishedTime = LocalDateTime.now(),
         versionOrFileName = "v1.5",

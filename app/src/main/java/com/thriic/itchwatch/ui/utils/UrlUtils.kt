@@ -16,5 +16,5 @@ fun String.cleanUrl():String{
     return url.substringBefore("?")
 }
 
-fun String.encodeUrl() = URLEncoder.encode(this, StandardCharsets.UTF_8.toString())
-fun String.decodeUrl() = URLDecoder.decode(this, StandardCharsets.UTF_8.toString())
+fun String.encodeUrl(): String = URLEncoder.encode(this, StandardCharsets.UTF_8.toString())
+fun String.decodeUrl(): String = URLDecoder.decode(this, StandardCharsets.UTF_8.toString())
