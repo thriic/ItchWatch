@@ -69,7 +69,7 @@ import com.thriic.itchwatch.ui.common.GameInfoItem
 import com.thriic.itchwatch.ui.common.PlatformRow
 import com.thriic.itchwatch.ui.utils.WatchLayout
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun ExploreScreen(layout: WatchLayout, viewModel: ExploreViewModel = viewModel(),
                   sharedTransitionScope: SharedTransitionScope,

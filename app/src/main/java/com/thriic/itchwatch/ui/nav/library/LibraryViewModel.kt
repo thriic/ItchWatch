@@ -68,6 +68,7 @@ class LibraryViewModel @Inject constructor(
                         sendMessage("refreshed")
                     }
                 }
+                update(_uiState.value.copy(loading = false, progress = null))
             }
 
             is LibraryIntent.AddGame -> {
@@ -129,6 +130,7 @@ class LibraryViewModel @Inject constructor(
                                 sendMessage("refreshed $successIndex/$size")
                             }
                         }
+                        update(_uiState.value.copy(loading = false, progress = null))
                     }
                 } else {
                     sendMessage("empty text")
