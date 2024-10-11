@@ -8,11 +8,15 @@ import com.thriic.core.model.toGameFull
 import com.thriic.core.network.DevLogRemoteDataSource
 import com.thriic.core.network.GameRemoteDataSource
 import com.thriic.core.network.model.DevLog
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -31,40 +35,77 @@ class GameRepository @Inject constructor(
     fun getGameBasics(refresh: Boolean = false): Flow<Result<GameBasic>> =
         channelFlow {
             if (refresh) {
-                coroutineScope {
+                flow {
                     for (game in latestGames) {
-                        //fetch one by one preventing "too many requests"
-
-                        async { getGameAndEmit(game.url) { this@channelFlow.send(it) } }.await()
+                        emit(game)
                     }
                 }
+                    .map { game ->
+                        async(Dispatchers.IO) {
+                            try {
+                                val gameFull =
+                                    gameRemoteDataSource.fetchGameData(game.url)
+                                        .map { it.toGameFull() }
+                                        .getOrThrow()
+                                latestGames =
+                                    latestGames.map { if (it.url == game.url) gameFull else it }
+                                        .toMutableList() //update member variable
+                                gameLocalDataSource.updateGames(gameFull)//update to database
+                                return@async Result.success(gameFull.basic)
+                            } catch (e: Exception) {
+                                failedList.add(game.url)
+                                this@channelFlow.send(Result.failure<GameBasic>(e))
+                            }
+                            return@async null
+                        }
+                    }
+                    .buffer(5)
+                    .collect { deferred ->
+                        val gameBasic = deferred.await()
+                        if (gameBasic != null)
+                            this@channelFlow.send(gameBasic)
+                    }
             } else {
                 latestGames = gameLocalDataSource.getLocalGames().toMutableList()
                 latestGames.forEach { gameFull ->
                     this@channelFlow.send(Result.success(gameFull.basic))
                 }
             }
-        }
+        }.buffer(5)
 
     fun addGames(urls: Set<String>): Flow<Result<GameBasic>> = channelFlow {
-        coroutineScope {
+        flow {
             for (url in urls) {
                 Log.i("GameRepository", url)
-                async { addGameAndEmit(url) { this@channelFlow.send(it) } }.await()
+                emit(url)
             }
         }
+            .map { url ->
+                async(Dispatchers.IO) {
+                    addGameAndEmit(url) { this@channelFlow.send(it) }
+                }
+            }
+            .buffer(8)
+            .collect { deferred ->
+                val gameBasic = deferred.await()
+                if (gameBasic != null)
+                    this@channelFlow.send(gameBasic)
+            }
 
     }
-
 
     fun addGame(url: String): Flow<Result<GameBasic>> = flow {
-        addGameAndEmit(url){ this@flow.emit(it) }
+        val gameBasic = addGameAndEmit(url) { this@flow.emit(it) }
+        if (gameBasic != null) emit(gameBasic)
     }
 
-    suspend fun addGameAndEmit(url: String, emit: suspend (Result<GameBasic>) -> Unit){
+    private suspend fun addGameAndEmit(
+        url: String,
+        emit: suspend (Result<GameBasic>) -> Unit
+    ): Result<GameBasic>? {
         if (latestGames.any { it.url == url }) {
             emit(Result.failure(Exception("Game already exists")))
-            return
+            return null
         }
         try {
             val gameFull =
@@ -72,27 +113,14 @@ class GameRepository @Inject constructor(
                     .getOrThrow()
             latestGames.add(gameFull)//add to member variable
             gameLocalDataSource.insertGames(gameFull)//insert to database
-            emit(Result.success(gameFull.basic))
+            return Result.success(gameFull.basic)
         } catch (e: Exception) {
             failedList.add(url)
             emit(Result.failure(e))
         }
+        return null
     }
 
-    private suspend fun getGameAndEmit(url: String, emit: suspend (Result<GameBasic>) -> Unit) {
-        try {
-            val gameFull =
-                gameRemoteDataSource.fetchGameData(url).map { it.toGameFull() }
-                    .getOrThrow()
-            latestGames = latestGames.map { if (it.url == url) gameFull else it }
-                .toMutableList() //update member variable
-            gameLocalDataSource.updateGames(gameFull)//update to database
-            emit(Result.success(gameFull.basic))
-        } catch (e: Exception) {
-            failedList.add(url)
-            emit(Result.failure(e))
-        }
-    }
 
     suspend fun deleteGame(url: String): Boolean {
         return if (latestGames.any { it.url == url }) {
