@@ -9,13 +9,24 @@ data class Tag(val displayName: String, val url: String, val type: TagType) {
             "/"
         )
 
+    override fun equals(other: Any?): Boolean {
+        if (other !is Tag) return false
+        return other.displayName == displayName && other.type == type && other.tagName == tagName
+    }
+
+    override fun hashCode(): Int {
+        var result = tagName.hashCode()
+        result *= 31 + displayName.hashCode()
+        return result
+    }
+
     override fun toString(): String {
         return "[$displayName]($url)"
     }
 }
 
-fun List<Tag>.filter(type: TagType): List<Tag> {
-    return this.filter { it.type == type }
+fun List<Tag>.filter(vararg types: TagType): List<Tag> {
+    return this.filter { types.contains(it.type) }
 }
 
 @Entity

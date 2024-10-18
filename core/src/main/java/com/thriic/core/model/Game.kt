@@ -48,7 +48,8 @@ data class Game(
             publishedTime = publishedTime,
             versionOrFileName = files.getVersionOrFileName(),
             platforms = platforms,
-            devLogs = devLogs
+            devLogs = devLogs,
+            filterTags = tags.filter(TagType.Platform, TagType.NormalTag, TagType.Language)
         )
 }
 
@@ -63,7 +64,8 @@ data class GameBasic(
     val publishedTime: LocalDateTime?,
     val versionOrFileName: String?,
     val platforms: Set<Platform>,
-    val devLogs: List<DevLogItem>?
+    val devLogs: List<DevLogItem>?,
+    val filterTags: List<Tag>
 )
 
 data class Rating(val ratingValue: String, val ratingCount: Int)

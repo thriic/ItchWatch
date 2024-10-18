@@ -21,6 +21,7 @@ import com.thriic.itchwatch.ui.nav.explore.ExploreScreen
 import com.thriic.itchwatch.ui.nav.explore.ExploreViewModel
 import com.thriic.itchwatch.ui.nav.library.LibraryScreen
 import com.thriic.itchwatch.ui.nav.library.LibraryViewModel
+import com.thriic.itchwatch.ui.nav.settings.SettingsScreen
 import com.thriic.itchwatch.ui.utils.WatchLayout
 
 
@@ -57,7 +58,7 @@ fun AppNavHost(
         when (currentDestination) {
             AppDestinations.EXPLORE -> ExploreScreen(layout, viewModel = hiltViewModel<ExploreViewModel>(), sharedTransitionScope = sharedTransitionScope, animatedContentScope =  animatedContentScope)
             AppDestinations.LIBRARY -> LibraryScreen(layout,viewModel = hiltViewModel<LibraryViewModel>(), sharedTransitionScope = sharedTransitionScope, animatedContentScope =  animatedContentScope)
-            AppDestinations.SHOPPING -> {}
+            AppDestinations.SHOPPING -> SettingsScreen()
             AppDestinations.PROFILE -> {}
         }
     }

@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thriic.core.model.GameBasic
+import com.thriic.core.model.Tag
 import com.thriic.core.repository.GameRepository
 import com.thriic.itchwatch.ui.Navigator
 import com.thriic.itchwatch.ui.utils.cleanUrl
@@ -27,12 +28,16 @@ class LibraryViewModel @Inject constructor(
     private val _items = MutableStateFlow<List<GameBasic>>(emptyList())
     val items: StateFlow<List<GameBasic>> = _items
 
-    private val _uiState = MutableStateFlow<LibraryUiState>(LibraryUiState(
+    private val _uiState = MutableStateFlow(LibraryUiState(
         SortType.Name, null,
         loading = false
     ))
     val state: StateFlow<LibraryUiState>
         get() = _uiState
+
+    private val _filterState = MutableStateFlow(FilterState("", mutableSetOf()))
+    val filterState: StateFlow<FilterState>
+        get() = _filterState
 
     private val _toastMessage = MutableStateFlow<String?>(null)
     val toastMessage = _toastMessage.asStateFlow()
@@ -175,6 +180,15 @@ class LibraryViewModel @Inject constructor(
                     }
                 }
             }
+
+            is LibraryIntent.UpdateFilter -> {
+                if (intent.keyword != null){
+                    _filterState.emit(_filterState.value.copy(keyword = intent.keyword))
+                }
+                if (intent.tags != null){
+                    _filterState.emit(_filterState.value.copy(tags = intent.tags))
+                }
+            }
         }
     }
 
@@ -195,6 +209,7 @@ sealed interface LibraryIntent {
     data class Remove(val url: String) : LibraryIntent
     data class AddGames(val text: String) : LibraryIntent
     data class Sort(val sortType: SortType) : LibraryIntent
+    data class UpdateFilter(val keyword:String?, val tags: Set<Tag>?): LibraryIntent
 }
 
 enum class SortType {
