@@ -27,6 +27,7 @@ import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.sharp.Star
 import androidx.compose.material.icons.twotone.Star
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -73,10 +74,15 @@ import com.thriic.core.model.Platform
 import com.thriic.itchwatch.ui.theme.ItchWatchTheme
 import com.thriic.core.model.TagType
 import com.thriic.core.model.filter
+import com.thriic.core.model.getContentLinks
 import com.thriic.core.network.model.DevLog
 import com.thriic.core.network.model.DevLogItem
 import com.thriic.itchwatch.R
 import com.thriic.itchwatch.ui.common.PlatformIcon
+import com.thriic.itchwatch.ui.utils.Href
+import com.thriic.itchwatch.ui.utils.getHref
+import com.thriic.itchwatch.ui.utils.phraseSocialUrl
+import com.thriic.itchwatch.ui.utils.removeDuplicatesByUrl
 
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -121,13 +127,13 @@ fun DetailScreen(
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
                                     .statusBarsPadding()
+                                    .aspectRatio(315f / 250f)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .fillMaxWidth()
                                     .sharedElement(
                                         sharedTransitionScope.rememberSharedContentState(key = "image-$id"),
                                         animatedVisibilityScope = animatedContentScope
                                     )
-                                    .aspectRatio(315f / 250f)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .fillMaxWidth()
 
                             )
                         }
@@ -171,6 +177,12 @@ fun DetailScreen(
                         if(game.files.isNotEmpty()) {
                             item {
                                 FileCard(cardModifier = cardModifier, files = game.files)
+                            }
+                        }
+                        val hrefs = (game.tags.getHref() + (game.content?.let { getContentLinks(it) } ?: emptyList())).phraseSocialUrl()
+                        if(hrefs.isNotEmpty()){
+                            item {
+                                LinkCard(cardModifier = cardModifier, links = hrefs)
                             }
                         }
                         item {
@@ -329,7 +341,7 @@ fun FileCard(
     cardModifier: Modifier = Modifier,
     files:List<File>
 ) {
-    Card(modifier = cardModifier, onClick = {}) {
+    Card(modifier = cardModifier, onClick = {}, colors = CardDefaults.cardColors(containerColor =MaterialTheme.colorScheme.surfaceVariant)) {
         Text("File", modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp), style = MaterialTheme.typography.titleLarge)
         files.forEach { file ->
             ListItem(
@@ -380,7 +392,7 @@ fun DevLogCard(
     devLogs: List<DevLogItem>
 ) {
     val uriHandler = LocalUriHandler.current
-    Card(modifier = cardModifier, onClick = {}) {
+    Card(modifier = cardModifier, onClick = {}, colors = CardDefaults.cardColors(containerColor =MaterialTheme.colorScheme.surfaceVariant)) {
 //        val underlineModifier = Modifier.drawBehind {
 //            val strokeWidthPx = 1.dp.toPx()
 //            val verticalOffset = size.height - 2.sp.toPx()
@@ -428,6 +440,39 @@ fun DevLogCard(
                 },
             )
         }
+
+    }
+}
+
+@Composable
+fun LinkCard(
+    cardModifier: Modifier = Modifier,
+    links:List<Href>
+) {
+    Card(modifier = cardModifier, onClick = {}, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+        val uriHandler = LocalUriHandler.current
+        Text("Links", modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp), style = MaterialTheme.typography.titleLarge)
+        Text(
+            buildAnnotatedString {
+                links.forEach { link ->
+                    withLink(
+                        LinkAnnotation.Url(
+                            link.url,
+                            TextLinkStyles(style = SpanStyle(color = Color.Blue))
+                        ) {
+                            val url = (it as LinkAnnotation.Url).url
+                            uriHandler.openUri(url)
+                        }
+                    ) {
+                        append(link.display)
+                    }
+                    append("   ")
+                }
+            },
+            modifier = Modifier.padding(16.dp),
+            style = MaterialTheme.typography.bodyLarge,
+            overflow = TextOverflow.Ellipsis
+        )
 
     }
 }

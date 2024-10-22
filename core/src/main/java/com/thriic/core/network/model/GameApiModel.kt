@@ -17,6 +17,7 @@ data class GameApiModel(
     val url: String,
     val devRss: String?,
     val tagElements: Elements,
+    val content: String?,
     val downloadElements: Elements?,
     val devLogElements: Elements?
 )
@@ -45,6 +46,9 @@ fun Document.toGameApiModel(url: String): GameApiModel {
     //parse information from "Dev Log"
     val devLogElements = selectFirst("section.game_devlog")?.select("li")
 
+    //parse content
+    val content = selectFirst("div.formatted_description")?.html()
+
 
     return GameApiModel(
         productApiModel = productApiModel,
@@ -53,6 +57,7 @@ fun Document.toGameApiModel(url: String): GameApiModel {
         url = url,
         devRss = selectFirst("link[type=application/rss+xml]")?.attr("href"),
         tagElements = trElements,
+        content = content,
         downloadElements = downloadElements,
         devLogElements = devLogElements
     )

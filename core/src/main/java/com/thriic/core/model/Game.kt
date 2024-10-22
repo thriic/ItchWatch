@@ -3,6 +3,7 @@ package com.thriic.core.model
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.fleeksoft.ksoup.Ksoup
 import com.thriic.core.network.NetworkException
 import com.thriic.core.network.model.DevLogItem
 import com.thriic.core.network.model.GameApiModel
@@ -18,6 +19,7 @@ data class Game(
     val icon: String?,
     @PrimaryKey val url: String,//TODO use gameId as unique identifier
     val description: String?,
+    val content: String?,
     @Embedded val rating: Rating?,
     val image: String?,
 
@@ -205,6 +207,7 @@ fun GameApiModel.toGameFull(): Game {
                 ratingValue = it.ratingValue
             )
         },
+        content = content,
         image = image,
         url = url,
         devLogs = devLogs,
@@ -214,4 +217,11 @@ fun GameApiModel.toGameFull(): Game {
         platforms = platforms,
         files = files
     )
+}
+
+fun getContentLinks(contentPlain: String): List<Pair<String, String>> {
+    val contentElement = Ksoup.parse(html = contentPlain)
+    return contentElement.select("a").map {
+        Pair(it.attr("href"), it.text()).also(::println)
+    }
 }
