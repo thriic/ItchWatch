@@ -78,10 +78,12 @@ fun ItchWatchApp(
             }
             composable(
                 "detail?url={url}&id={id}",
-                arguments = listOf(navArgument("url") { type = NavType.StringType },navArgument("id") { type = NavType.StringType })
+                arguments = listOf(
+                    navArgument("url") { type = NavType.StringType },
+                    navArgument("id") { type = NavType.StringType })
             ) { backStackEntry ->
                 val id =
-                    backStackEntry.arguments?.getString("id") ?: throw Exception("url is null")
+                    backStackEntry.arguments?.getString("id") ?: throw Exception("id is null")
                 DetailScreen(
                     id = id,
                     animatedContentScope = this@composable,

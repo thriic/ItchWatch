@@ -24,12 +24,14 @@ import androidx.compose.foundation.layout.ContextualFlowRowOverflowScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -89,6 +91,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.thriic.core.formatTimeDifference
 import com.thriic.core.model.GameBasic
 import com.thriic.core.model.Platform
@@ -101,6 +104,7 @@ import com.thriic.itchwatch.ui.common.PlatformRow
 import com.thriic.itchwatch.ui.common.SearchLayout
 import com.thriic.itchwatch.ui.utils.WatchLayout
 import com.thriic.itchwatch.ui.utils.cleanUrl
+import com.thriic.itchwatch.ui.utils.getId
 import com.thriic.itchwatch.ui.utils.isGamePageUrl
 import com.thriic.itchwatch.ui.utils.readTextFile
 import java.time.LocalDateTime
@@ -361,28 +365,38 @@ fun LibraryScreen(
                 }
 
             }
+
             val itemModifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
             val filterItems = itemState.filter { it.filterTags.containsAll(filterState.tags) && it.name.contains(filterState.keyword,ignoreCase = true) }
             itemsIndexed(filterItems, key = { index, item -> index }) { index, item ->
+                val id = item.url.getId()
                 with(sharedTransitionScope) {
                     LibraryItem(
                         gameBasic = item,
                         modifier = itemModifier,
-                        onClick = { viewModel.send(LibraryIntent.ClickItem(item.url, index)) },
+                        onClick = { viewModel.send(LibraryIntent.ClickItem(item.url, id)) },
                         onLongClick = { showBottomSheetWithUrl = item.url },
                         imageModifier = Modifier
-                            .size(100.dp)
-                            .clip(RoundedCornerShape(8.dp))
                             .sharedElement(
-                                sharedTransitionScope.rememberSharedContentState(key = "image-${index}"),
+                                sharedTransitionScope.rememberSharedContentState(key = "image-$id"),
                                 animatedVisibilityScope = animatedContentScope
-                            ),
+                            )
+                            //.size(100.dp)
+                            .sizeIn(maxHeight = 80.dp)
+                            .aspectRatio(315f / 250f)
+                            .clip(RoundedCornerShape(8.dp)),
                         textModifier = Modifier.sharedElement(
-                            sharedTransitionScope.rememberSharedContentState(key = "text-${index}"),
+                            sharedTransitionScope.rememberSharedContentState(key = "text-$id"),
                             animatedVisibilityScope = animatedContentScope,
-                        )
+                        ),
+//                        image = ImageRequest.Builder(LocalContext.current)
+//                            .data(item.image)
+//                            .crossfade(true)
+//                            .placeholderMemoryCacheKey("image-$id")
+//                            .memoryCacheKey("image-$id")
+//                            .build()
                     )
                 }
             }
@@ -496,14 +510,12 @@ fun LibraryScreen(
 fun LibraryItem(
     gameBasic: GameBasic,
     modifier: Modifier = Modifier,
+    //image: ImageRequest,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = {},
     imageModifier: Modifier = Modifier
         .size(100.dp)
-        .clip(RoundedCornerShape(8.dp))
-    //.height(105.dp)
-    //.aspectRatio(315f / 250f)
-    ,
+        .clip(RoundedCornerShape(8.dp)),
     textModifier: Modifier = Modifier
 ) {
     Card(
@@ -598,16 +610,16 @@ fun SearchItemPreview() {
         ),
         filterTags = emptyList()
     )
-    Surface {
-        Column {
-            LibraryItem(
-                gameBasic = fakeGameBasic,
-                modifier = Modifier.fillMaxWidth()
-            )
-            LibraryItem(
-                gameBasic = fakeGameBasic,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
+//    Surface {
+//        Column {
+//            LibraryItem(
+//                gameBasic = fakeGameBasic,
+//                modifier = Modifier.fillMaxWidth()
+//            )
+//            LibraryItem(
+//                gameBasic = fakeGameBasic,
+//                modifier = Modifier.fillMaxWidth(),
+//            )
+//        }
+//    }
 }

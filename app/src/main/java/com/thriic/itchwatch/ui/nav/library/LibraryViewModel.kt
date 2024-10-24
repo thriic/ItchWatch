@@ -205,7 +205,7 @@ class LibraryViewModel @Inject constructor(
 sealed interface LibraryIntent {
     data class AddGame(val url: String) : LibraryIntent
     data object Refresh : LibraryIntent
-    data class ClickItem(val url: String, val id: Int) : LibraryIntent
+    data class ClickItem(val url: String, val id: String) : LibraryIntent
     data class Remove(val url: String) : LibraryIntent
     data class AddGames(val text: String) : LibraryIntent
     data class Sort(val sortType: SortType) : LibraryIntent

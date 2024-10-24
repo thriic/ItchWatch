@@ -54,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
@@ -63,11 +64,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.thriic.core.model.Platform
 import com.thriic.core.network.model.SearchResult
 import com.thriic.itchwatch.ui.common.GameInfoItem
 import com.thriic.itchwatch.ui.common.PlatformRow
 import com.thriic.itchwatch.ui.utils.WatchLayout
+import com.thriic.itchwatch.ui.utils.getId
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -132,24 +135,25 @@ fun ExploreScreen(layout: WatchLayout, viewModel: ExploreViewModel = viewModel()
                         ) {
                             val itemModifier = Modifier
                                 .fillMaxWidth()
-                            itemsIndexed(uiState.searchApiModel.items, key = { index, item -> index }) { index, item ->
+                            itemsIndexed(uiState.searchApiModel.items, key = { index, item -> index }) { _, item ->
+                                val id = item.gameLink.getId()
                                 with(sharedTransitionScope) {
                                     SearchItem(
                                         item,
                                         itemModifier
                                             .clickable {
                                                 viewModel.send(
-                                                    ExploreIntent.OpenGame(item.gameLink, index)
+                                                    ExploreIntent.OpenGame(item.gameLink, id)
                                                 )
                                             }
                                             .padding(16.dp),
                                         imageModifier = Modifier
                                             .sharedElement(
-                                                sharedTransitionScope.rememberSharedContentState(key = "image-ex${index}"),
+                                                sharedTransitionScope.rememberSharedContentState(key = "image-$id"),
                                                 animatedVisibilityScope = animatedContentScope
                                             ),
                                         textModifier = Modifier.sharedElement(
-                                            sharedTransitionScope.rememberSharedContentState(key = "text-ex${index}"),
+                                            sharedTransitionScope.rememberSharedContentState(key = "text-$id"),
                                             animatedVisibilityScope = animatedContentScope,
                                         )
                                     )
@@ -167,7 +171,7 @@ fun ExploreScreen(layout: WatchLayout, viewModel: ExploreViewModel = viewModel()
                                     .fillMaxWidth()
                                 val imageModifier = Modifier
                                     .aspectRatio(315f / 250f)
-                                    .clip(RoundedCornerShape(16.dp))
+                                    .clip(RoundedCornerShape(8.dp))
                                 items(uiState.searchApiModel.items) {
                                     SearchItemExpanded(it, itemModifier, imageModifier)
                                 }
@@ -283,6 +287,7 @@ fun BoxScope.SearchLayout(
 }
 
 
+//TODO click to progress status
 @Composable
 fun SearchItem(
     searchItem: SearchResult,
@@ -293,6 +298,7 @@ fun SearchItem(
     Row(
         modifier = modifier
     ) {
+
         if (searchItem.image != null) {
             AsyncImage(
                 model = searchItem.image,

@@ -30,7 +30,7 @@ class ExploreViewModel @Inject constructor(
         when (intent) {
             is ExploreIntent.OpenGame -> {
                 gameRepository.getGameFull(intent.url) ?: gameRepository.getGameFull(intent.url, refresh = true)
-                navigator.navigate("detail?url=${intent.url.encodeUrl()}&id=ex${intent.id}")
+                navigator.navigate("detail?url=${intent.url.encodeUrl()}&id=${intent.id}")
             }
             is ExploreIntent.Search -> {
                 update(ExploreUiState.Loading)
@@ -48,5 +48,5 @@ sealed interface ExploreIntent {
     data class Search(
         val keyword: String = "",
     ) : ExploreIntent
-    data class OpenGame(val url: String,val id:Int) : ExploreIntent
+    data class OpenGame(val url: String,val id:String) : ExploreIntent
 }

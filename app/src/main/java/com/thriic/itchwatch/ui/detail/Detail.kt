@@ -127,13 +127,13 @@ fun DetailScreen(
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
                                     .statusBarsPadding()
-                                    .aspectRatio(315f / 250f)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .fillMaxWidth()
                                     .sharedElement(
                                         sharedTransitionScope.rememberSharedContentState(key = "image-$id"),
                                         animatedVisibilityScope = animatedContentScope
                                     )
+                                    .aspectRatio(315f / 250f)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .fillMaxWidth()
 
                             )
                         }
