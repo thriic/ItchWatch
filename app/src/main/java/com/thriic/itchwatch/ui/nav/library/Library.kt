@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.ContextualFlowRowOverflowScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,6 +33,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -118,28 +120,30 @@ fun Filter(
 ) {
     val allTags by remember { mutableStateOf(allFilters) }
 
-    val modifier = Modifier.padding(top = 8.dp)
+    val modifier = Modifier.padding(horizontal = 8.dp)
     Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
         ChipRow(
             title = "Platform",
             tags = allTags.filter { it.type == TagType.Platform },
             selectedTags = selectedTags,
-            onSelected = onChangeSelected
+            onSelected = onChangeSelected,
+            modifier = modifier.padding(top = 8.dp)
         )
 
         ChipRow(
             title = "Language",
             tags = allTags.filter { it.type == TagType.Language },
             selectedTags = selectedTags,
-            onSelected = onChangeSelected
+            onSelected = onChangeSelected,
+            modifier = modifier
         )
 
-        ChipFlowRow(
-            title = "Tag",
-            tags = allTags.filter { it.type == TagType.NormalTag },
-            selectedTags = selectedTags,
-            onSelected = onChangeSelected
-        )
+//        ChipFlowRow(
+//            title = "Tag",
+//            tags = allTags.filter { it.type == TagType.NormalTag },
+//            selectedTags = selectedTags,
+//            onSelected = onChangeSelected
+//        )
 
 
     }
@@ -157,9 +161,10 @@ fun ChipRow(
     Text(
         title,
         style = MaterialTheme.typography.titleSmall,
-        modifier = modifier.padding(start = 8.dp)
+        modifier = modifier
     )
-    LazyRow(modifier = Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        item { Spacer(modifier = Modifier.width(8.dp)) }
         items(tags) { tag ->
             val selected = selectedTags.contains(tag)
             FilterChip(
@@ -180,6 +185,7 @@ fun ChipRow(
                 }
             )
         }
+        item { Spacer(modifier = Modifier.width(8.dp)) }
     }
 }
 
