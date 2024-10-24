@@ -42,9 +42,9 @@ fun List<Tag>.getHref(): List<Pair<String, String>> {
 //https://discord.gg/QwbDTgQm
 //https://www.instagram.com/roryyaya/
 //https://www.youtube.com/channel/UCjJEUMnBFHOP2zpBc7vCnsA ntytb
-const val specifyDomain = "x|twitter|ko-fi|patreon"
-val otherDomain = listOf("discord", "instagram", "youtube", "reddit", "bsky", "t.me")
-//TODO bluesky telegram id
+const val specifyDomain = "x|twitter|ko-fi|patreon|bsky"
+val otherDomain = listOf("discord", "instagram", "youtube", "reddit", "bsky", "t.me", "telegram")
+
 fun List<Pair<String, String>>.phraseSocialUrl(): List<Href> {
     val urlRegex = """(https?://\S+)""".toRegex()
 
@@ -53,35 +53,34 @@ fun List<Pair<String, String>>.phraseSocialUrl(): List<Href> {
         .map { (_, group) ->
             group.maxByOrNull { if (it.second.isNotBlank()) 1 else 0 }!!
         }.mapNotNull { (url, display) ->
-        val result = """(https?://)?(www.)?($specifyDomain)\.com/([^/?#]+)""".toRegex().find(url)
-        if (result != null) {
-            val domain = result.groupValues[3].let { if (it == "twitter" || it == "x") "twi" else it }
-            val id = result.groupValues[4]
-            if (urlRegex.matches(display) || display.isBlank())
-                Href(url, "$domain@$id".capitalizeFirstLetter())
-            else if (display.contains(domain, ignoreCase = true))
-                Href(url, display)
-            else
-                Href(url, "$display(${domain.capitalizeFirstLetter()})")
-        } else if (otherDomain.any { keyword -> url.contains(keyword, ignoreCase = true) }) {
-            val domain = otherDomain.first { keyword -> url.contains(keyword, ignoreCase = true) }
-                .let {
+            val result = """(https?://)?(www.)?($specifyDomain)\.(com|app)/\S+""".toRegex().find(url)
+            if (result != null) {
+                val domain = result.groupValues[3].let {
                     when (it) {
-                        "t.me" -> "telegram"
-                        "bsky" -> "Bluesky"
+                        "x" -> "twitter"
+                        "bsky" -> "bluesky"
                         else -> it
                     }
                 }
-            if (urlRegex.matches(display) || display.isBlank())
-                Href(url, domain.capitalizeFirstLetter())
-            else if (display.contains(domain, ignoreCase = true))
-                Href(url, display)
-            else
-                Href(url, "$display(${domain.capitalizeFirstLetter()})")
-        } else {
-            null
+                val id = result.value.substringAfterLast("/")//result.groupValues[4]
+
+                Href(url, "$domain@$id".capitalizeFirstLetter())
+            } else if (otherDomain.any { keyword -> url.contains(keyword, ignoreCase = true) }) {
+                val domain =
+                    otherDomain.first { keyword -> url.contains(keyword, ignoreCase = true) }
+                        .let { if (it == "t.me") "telegram" else it }
+                //display is url || display is blank
+                if (urlRegex.matches(display) || display.isBlank())
+                    Href(url, domain.capitalizeFirstLetter())
+                //display contains domain
+                else if (display.contains(domain, ignoreCase = true))
+                    Href(url, display)
+                else
+                    Href(url, "$display(${domain.capitalizeFirstLetter()})")
+            } else {
+                null
+            }
         }
-    }
 }
 
 fun String.capitalizeFirstLetter(): String {
@@ -90,10 +89,6 @@ fun String.capitalizeFirstLetter(): String {
     }
 }
 
-fun List<Href>.removeDuplicatesByUrl(): List<Href> {
-    return this
-        .groupBy { it.url }
-        .map { (_, group) ->
-            group.maxByOrNull { if (it.display.isNotBlank()) 1 else 0 }!!
-        }.also(::println)
+fun String.getId(): String {
+    return this.replace("[?=./\"]".toRegex(), "")
 }
