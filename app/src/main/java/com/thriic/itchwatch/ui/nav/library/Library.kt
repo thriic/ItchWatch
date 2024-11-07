@@ -121,7 +121,9 @@ fun Filter(
     val allTags by remember { mutableStateOf(allFilters) }
 
     val modifier = Modifier.padding(horizontal = 8.dp)
-    Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(modifier = Modifier
+        .fillMaxWidth()
+        .verticalScroll(rememberScrollState())) {
         ChipRow(
             title = "Platform",
             tags = allTags.filter { it.type == TagType.Platform },
@@ -226,7 +228,7 @@ fun ChipFlowRow(
             .fillMaxWidth(1f)
             .padding(8.dp)
             .wrapContentHeight(align = Alignment.Top),
-            //.verticalScroll(rememberScrollState()),
+        //.verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         maxLines = maxLines,
@@ -293,6 +295,7 @@ fun LibraryScreen(
     var searchBarOffsetY by remember { mutableIntStateOf(0) }
 
     var selectedTags by remember { mutableStateOf(filterState.tags) }
+
     SearchLayout(
         onApplySearch = { query ->
             viewModel.send(
@@ -347,35 +350,40 @@ fun LibraryScreen(
                 }
             }
         }
+
+        if (state.loading) {
+            if (state.progress != null) {
+                val animatedProgress by
+                animateFloatAsState(
+                    targetValue = state.progress!!,
+                    animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
+                )
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth(),
+                    progress = { animatedProgress },
+                )
+            } else {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+
+        }
         LazyColumn(
             contentPadding = contentPadding,
             state = rememberLazyListState(),
             modifier = Modifier.nestedScroll(searchBarConnection),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (state.loading) {
-                item {
-                    if (state.progress != null) {
-                        val animatedProgress by
-                        animateFloatAsState(
-                            targetValue = state.progress!!,
-                            animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
-                        )
-                        LinearProgressIndicator(
-                            modifier = Modifier.fillMaxWidth(),
-                            progress = { animatedProgress },
-                        )
-                    } else {
-                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                    }
-                }
 
-            }
 
             val itemModifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
-            val filterItems = itemState.filter { it.filterTags.containsAll(filterState.tags) && it.name.contains(filterState.keyword,ignoreCase = true) }
+            val filterItems = itemState.filter {
+                it.filterTags.containsAll(filterState.tags) && it.name.contains(
+                    filterState.keyword,
+                    ignoreCase = true
+                )
+            }
             itemsIndexed(filterItems, key = { index, item -> index }) { index, item ->
                 val id = item.url.getId()
                 with(sharedTransitionScope) {
