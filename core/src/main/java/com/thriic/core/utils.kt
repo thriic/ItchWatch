@@ -50,11 +50,18 @@ fun LocalDateTime.formatTimeDifference(): String {
     val monthsDifference = ChronoUnit.MONTHS.between(this, now)
     val yearsDifference = ChronoUnit.YEARS.between(this, now)
 
+//    return when {
+//        minutesDifference < 60 -> "$minutesDifference minutes ago"
+//        hoursDifference < 24 -> "$hoursDifference hours ago"
+//        daysDifference < 30 -> "$daysDifference days ago"
+//        monthsDifference < 12 -> "$monthsDifference months ago"
+//        else -> "$yearsDifference years ago"
+//    }
     return when {
-        minutesDifference < 60 -> "$minutesDifference minutes ago"
-        hoursDifference < 24 -> "$hoursDifference hours ago"
-        daysDifference < 30 -> "$daysDifference days ago"
-        monthsDifference < 12 -> "$monthsDifference months ago"
+        hoursDifference < 1 -> "$minutesDifference minutes ago"
+        daysDifference < 1 -> "$hoursDifference hours ago"
+        monthsDifference < 1 -> "$daysDifference days ago"
+        yearsDifference < 1 -> "$monthsDifference months ago"
         else -> "$yearsDifference years ago"
     }
 }
