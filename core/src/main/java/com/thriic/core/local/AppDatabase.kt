@@ -16,6 +16,7 @@ import com.google.gson.reflect.TypeToken
 import com.thriic.core.LocalDateTimeConverter
 import com.thriic.core.model.File
 import com.thriic.core.model.Game
+import com.thriic.core.model.LocalInfo
 import com.thriic.core.model.Platform
 import com.thriic.core.model.Tag
 import com.thriic.core.network.model.DevLogItem
@@ -23,10 +24,11 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
-@Database(entities = [Game::class], version = 1, exportSchema = false)
+@Database(entities = [Game::class,LocalInfo::class], version = 1, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
+    abstract fun infoDao(): InfoDao
 }
 
 @Dao
@@ -45,6 +47,21 @@ interface GameDao {
 
     @Query("SELECT COUNT(*) FROM game WHERE url = :url")
     fun countByUrl(url: String): Int
+}
+
+@Dao
+interface InfoDao {
+    @Query("SELECT * FROM localinfo")
+    fun getAll(): List<LocalInfo>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertAll(vararg infos: LocalInfo)
+
+    @Update
+    fun updateInfos(vararg infos: LocalInfo)
+
+    @Delete
+    fun delete(info: LocalInfo)
 }
 
 class Converters {

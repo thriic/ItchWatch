@@ -19,12 +19,14 @@ data class GameApiModel(
     val tagElements: Elements,
     val content: String?,
     val downloadElements: Elements?,
-    val devLogElements: Elements?
+    val devLogElements: Elements?,
+    val csrfToken:String?,
 )
 //screenshots
 
 fun Document.toGameApiModel(url: String): GameApiModel {
     val metadata: MetaData = Ksoup.parseMetaData(element = this)
+    val csrfToken = selectFirst("meta[name=csrf_token]")?.attr("value")
 
     //parse information from "Product" json
     val scripts = select("script[type=application/ld+json]")
@@ -59,7 +61,8 @@ fun Document.toGameApiModel(url: String): GameApiModel {
         tagElements = trElements,
         content = content,
         downloadElements = downloadElements,
-        devLogElements = devLogElements
+        devLogElements = devLogElements,
+        csrfToken = csrfToken
     )
 
 }

@@ -41,5 +41,9 @@ object DIModule {
     @Singleton
     fun provideGameDao(appDatabase: AppDatabase) = appDatabase.gameDao()
 
+    @Provides
+    @Singleton
+    fun provideInfoDao(appDatabase: AppDatabase) = appDatabase.infoDao()
+
 }
 

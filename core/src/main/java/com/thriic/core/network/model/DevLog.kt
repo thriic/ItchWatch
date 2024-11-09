@@ -5,7 +5,6 @@ import com.thriic.core.network.NetworkException
 import com.thriic.core.toLocalDateTime
 import java.time.LocalDateTime
 
-
 data class DevLog(val url: String, val items: List<DevLogItem>)
 
 data class DevLogItem(

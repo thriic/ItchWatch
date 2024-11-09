@@ -5,7 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-class GameLocalDataSource @Inject constructor(private val gameDao: GameDao) {
+class GameLocalDataSource @Inject constructor(private val gameDao: GameDao, private val infoDao: InfoDao) {
     suspend fun getLocalGames(): List<Game> =
         withContext(Dispatchers.IO) {
             gameDao.getAll()

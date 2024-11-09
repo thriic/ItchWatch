@@ -12,6 +12,10 @@ import java.time.LocalDateTime
 
 /**
  * Info Page shows Game Full Information
+ * @property name game name
+ * @property icon website icon
+ * @property updatedTime last updated time on page
+ * @property publishedTime published time on page
  */
 @Entity
 data class Game(
@@ -22,21 +26,26 @@ data class Game(
     val content: String?,
     @Embedded val rating: Rating?,
     val image: String?,
-
+    /**
+     * init when fetch games
+     *
+     * get all devLogs with full information by fetching downloadPage
+     * @see com.thriic.core.network.GameRemoteDataSource.fetchDownloadPage
+     */
     val devLogs: List<DevLogItem>,
-    /**
-     * last updated time, nullable
-     */
     val updatedTime: LocalDateTime?,
-    /**
-     * published time, nullable
-     */
     val publishedTime: LocalDateTime?,
     val platforms: Set<Platform>,
     /**
-     * download files
+     * Download files
      *
-     * a game only played on browser has no files
+     * there are **no downloadable files** when a game can only be played in the browser
+     *
+     * init when fetch games
+     *
+     * get full information(upload time) by fetching devLogs from feed
+     *
+     * @see com.thriic.core.network.DevLogRemoteDataSource.fetchDevLog
      */
     val files: List<File>,
     val tags: List<Tag>
