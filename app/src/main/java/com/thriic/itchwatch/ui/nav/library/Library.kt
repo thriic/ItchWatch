@@ -49,6 +49,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
@@ -414,6 +415,7 @@ fun LibraryScreen(
                             sharedTransitionScope.rememberSharedContentState(key = "text-$id"),
                             animatedVisibilityScope = animatedContentScope,
                         ),
+                        showStar = SortType.Starred in state.sortTypes
 //                        image = ImageRequest.Builder(LocalContext.current)
 //                            .data(item.image)
 //                            .crossfade(true)
@@ -524,7 +526,8 @@ fun LibraryItem(
     imageModifier: Modifier = Modifier
         .size(100.dp)
         .clip(RoundedCornerShape(8.dp)),
-    textModifier: Modifier = Modifier
+    textModifier: Modifier = Modifier,
+    showStar:Boolean = false
 ) {
     Card(
         modifier = modifier
@@ -571,14 +574,29 @@ fun LibraryItem(
                     "Published·${gameBasic.publishedTime!!.formatTimeDifference()}"
                 else
                     ""
-                if (textBox.isNotEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(90.dp))
-                            .background(MaterialTheme.colorScheme.inverseOnSurface)
-                            .padding(8.dp)
-                    ) {
-                        Text(textBox, style = MaterialTheme.typography.bodySmall)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (gameBasic.localInfo.starred && showStar) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(90.dp))
+                                .background(MaterialTheme.colorScheme.inverseOnSurface)
+                                .padding(8.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.Star,contentDescription = null, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                    if (textBox.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(90.dp))
+                                .background(MaterialTheme.colorScheme.inverseOnSurface)
+                                .padding(8.dp)
+                        ) {
+                            Text(textBox, style = MaterialTheme.typography.bodySmall)
+                        }
                     }
                 }
             }
