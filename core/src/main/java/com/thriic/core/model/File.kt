@@ -21,7 +21,7 @@ val androidVersionRegex = Regex(
     ".*-((a|b|v|ver.*)*[0-9.]+[a-z]*)(\\s*-\\s*android)*\\s*.\\s*apk",
     RegexOption.IGNORE_CASE
 )
-val versionRegex = Regex("((v|ver.?)\\s*[0-9.]+[a-y]?|build [0-9.]{1,3})", RegexOption.IGNORE_CASE)
+val versionRegex = Regex("((v|ver.?)\\s*[0-9.]*[0-9]+[a-y]?|build\\s*[0-9.]*[0-9]|[0-9.]{2,4}[0-9])", RegexOption.IGNORE_CASE)
 
 fun List<File>.getVersionOrFileName(): String {
     if (isEmpty()) return ""
