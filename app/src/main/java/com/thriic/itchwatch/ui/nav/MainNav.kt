@@ -17,6 +17,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.thriic.itchwatch.R
+import com.thriic.itchwatch.ui.nav.imports.Import
+import com.thriic.itchwatch.ui.nav.imports.ImportViewModel
 import com.thriic.itchwatch.ui.nav.explore.ExploreScreen
 import com.thriic.itchwatch.ui.nav.explore.ExploreViewModel
 import com.thriic.itchwatch.ui.nav.library.LibraryScreen
@@ -58,7 +60,7 @@ fun AppNavHost(
         when (currentDestination) {
             AppDestinations.EXPLORE -> ExploreScreen(layout, viewModel = hiltViewModel<ExploreViewModel>(), sharedTransitionScope = sharedTransitionScope, animatedContentScope =  animatedContentScope)
             AppDestinations.LIBRARY -> LibraryScreen(layout,viewModel = hiltViewModel<LibraryViewModel>(), sharedTransitionScope = sharedTransitionScope, animatedContentScope =  animatedContentScope)
-            AppDestinations.SHOPPING -> SettingsScreen()
+            AppDestinations.IMPORT -> Import(layout,viewModel = hiltViewModel<ImportViewModel>())
             AppDestinations.PROFILE -> {}
         }
     }
@@ -70,6 +72,6 @@ enum class AppDestinations(
 ) {
     EXPLORE("Explore", R.drawable.search),
     LIBRARY("My Lib", R.drawable.library),
-    SHOPPING("Shopping", R.drawable.search),
+    IMPORT("Import", R.drawable.import_24px),
     PROFILE("Settings", R.drawable.settings),
 }

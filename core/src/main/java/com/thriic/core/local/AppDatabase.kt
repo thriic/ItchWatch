@@ -12,17 +12,22 @@ import androidx.room.TypeConverters
 import androidx.room.Update
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonDeserializationContext
+import com.google.gson.JsonDeserializer
+import com.google.gson.JsonElement
+import com.google.gson.JsonPrimitive
+import com.google.gson.JsonSerializationContext
+import com.google.gson.JsonSerializer
 import com.google.gson.reflect.TypeToken
-import com.thriic.core.LocalDateTimeConverter
 import com.thriic.core.model.File
 import com.thriic.core.model.Game
 import com.thriic.core.model.LocalInfo
 import com.thriic.core.model.Platform
 import com.thriic.core.model.Tag
 import com.thriic.core.network.model.DevLogItem
-import java.time.Instant
+import java.lang.reflect.Type
 import java.time.LocalDateTime
-import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 @Database(entities = [Game::class,LocalInfo::class], version = 1, exportSchema = false)
 @TypeConverters(Converters::class)
@@ -53,6 +58,9 @@ interface GameDao {
 interface InfoDao {
     @Query("SELECT * FROM localinfo")
     fun getAll(): List<LocalInfo>
+
+    @Query("SELECT * FROM localinfo WHERE url = :url")
+    fun queryInfo(url: String): LocalInfo?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertAll(vararg infos: LocalInfo)
@@ -125,4 +133,20 @@ class Converters {
     }
 
 
+}
+
+class LocalDateTimeConverter : JsonSerializer<LocalDateTime>, JsonDeserializer<LocalDateTime> {
+    private val formatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
+    override fun deserialize(json: JsonElement?, typeOfT: Type?, context: JsonDeserializationContext?): LocalDateTime {
+        return LocalDateTime.parse(json?.asString, formatter)
+    }
+
+    override fun serialize(
+        src: LocalDateTime?,
+        typeOfSrc: Type?,
+        context: JsonSerializationContext?
+    ): JsonElement {
+        return JsonPrimitive(formatter.format(src))
+    }
 }

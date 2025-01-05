@@ -65,20 +65,3 @@ fun LocalDateTime.formatTimeDifference(): String {
         else -> "$yearsDifference years ago"
     }
 }
-
-class LocalDateTimeConverter : JsonSerializer<LocalDateTime>, JsonDeserializer<LocalDateTime> {
-    private val formatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-
-    override fun deserialize(json: JsonElement?, typeOfT: Type?, context: JsonDeserializationContext?): LocalDateTime {
-        return LocalDateTime.parse(json?.asString, formatter)
-    }
-
-    override fun serialize(
-        src: LocalDateTime?,
-        typeOfSrc: Type?,
-        context: JsonSerializationContext?
-    ): JsonElement {
-        return JsonPrimitive(formatter.format(src))
-    }
-}
-

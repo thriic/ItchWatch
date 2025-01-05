@@ -14,7 +14,7 @@ import java.time.LocalDateTime
  * Info Page shows Game Full Information
  * @property name game name
  * @property icon website icon
- * @property updatedTime last updated time on page
+ * @property updatedTime updated time on page
  * @property publishedTime published time on page
  */
 @Entity
@@ -37,7 +37,7 @@ data class Game(
     val publishedTime: LocalDateTime?,
     val platforms: Set<Platform>,
     /**
-     * Download files
+     * Download files vb
      *
      * there are **no downloadable files** when a game can only be played in the browser
      *

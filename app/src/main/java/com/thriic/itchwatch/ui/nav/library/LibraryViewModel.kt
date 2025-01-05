@@ -56,12 +56,14 @@ class LibraryViewModel @Inject constructor(
             LibraryIntent.Refresh -> {
 
                 val size = _items.value.size
+                var successIndex = 0
                 var index = 0
                 update(_uiState.value.copy(loading = true))
                 repository.getGameBasics(true).collect { result ->
                     index += 1
                     Log.i("Lib ViewModel", "refresh $result")
                     if (result.isSuccess) {
+                        successIndex += 1
                         _items.value =
                             _items.value.map { if (it.url == result.getOrThrow().url) result.getOrThrow() else it }
                     }
@@ -70,7 +72,7 @@ class LibraryViewModel @Inject constructor(
 
                     if (index >= size) {
                         update(_uiState.value.copy(loading = false, progress = null))
-                        sendMessage("refreshed")
+                        sendMessage("refreshed $successIndex/$size")
                     }
                 }
                 update(_uiState.value.copy(loading = false, progress = null))
@@ -145,40 +147,7 @@ class LibraryViewModel @Inject constructor(
 
             is LibraryIntent.Sort -> {
                 update(_uiState.value.copy(sortType = intent.sortType))
-                when (intent.sortType) {
-                    SortType.Name -> {
-                        _items.value = _items.value.sortedWith(compareBy { it.name })
-                    }
-
-                    SortType.Time -> {
-                        //Priority: updatedTime > first devLog > publishedTime
-                        _items.value = _items.value.sortedBy {
-                            if (it.updatedTime == null ) {
-                                if(!it.devLogs.isNullOrEmpty()) {
-                                    it.devLogs!![0].pubDate
-                                }else{
-                                    it.publishedTime
-                                }
-                            }else{
-                                it.updatedTime
-                            }
-                        }
-                    }
-
-                    SortType.TimeReverse -> {
-                        _items.value = _items.value.sortedByDescending {
-                            if (it.updatedTime == null ) {
-                                if(!it.devLogs.isNullOrEmpty()) {
-                                    it.devLogs!![0].pubDate
-                                }else{
-                                    it.publishedTime
-                                }
-                            }else{
-                                it.updatedTime
-                            }
-                        }
-                    }
-                }
+                sort(intent.sortType)
             }
 
             is LibraryIntent.UpdateFilter -> {
@@ -187,6 +156,49 @@ class LibraryViewModel @Inject constructor(
                 }
                 if (intent.tags != null){
                     _filterState.emit(_filterState.value.copy(tags = intent.tags))
+                }
+            }
+
+            LibraryIntent.SyncRepository -> {
+                Log.i("Lib ViewModel", "sync")
+                _items.value = repository.syncGameBasic()
+                sort()
+            }
+        }
+    }
+
+    private fun sort(sortType: SortType = _uiState.value.sortType){
+        when (sortType) {
+            SortType.Name -> {
+                _items.value = _items.value.sortedWith(compareBy { it.name })
+            }
+
+            SortType.Time -> {
+                //Priority: updatedTime > first devLog > publishedTime
+                _items.value = _items.value.sortedBy {
+                    if (it.updatedTime == null ) {
+                        if(!it.devLogs.isNullOrEmpty()) {
+                            it.devLogs!![0].pubDate
+                        }else{
+                            it.publishedTime
+                        }
+                    }else{
+                        it.updatedTime
+                    }
+                }
+            }
+
+            SortType.TimeReverse -> {
+                _items.value = _items.value.sortedByDescending {
+                    if (it.updatedTime == null ) {
+                        if(!it.devLogs.isNullOrEmpty()) {
+                            it.devLogs!![0].pubDate
+                        }else{
+                            it.publishedTime
+                        }
+                    }else{
+                        it.updatedTime
+                    }
                 }
             }
         }
@@ -210,6 +222,7 @@ sealed interface LibraryIntent {
     data class AddGames(val text: String) : LibraryIntent
     data class Sort(val sortType: SortType) : LibraryIntent
     data class UpdateFilter(val keyword:String?, val tags: Set<Tag>?): LibraryIntent
+    data object SyncRepository : LibraryIntent
 }
 
 enum class SortType {

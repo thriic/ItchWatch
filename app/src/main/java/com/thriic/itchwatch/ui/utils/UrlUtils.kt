@@ -14,6 +14,10 @@ fun String.isGamePageUrl(): Boolean {
     return this.matches(Regex("^https://([^/]+)\\.itch\\.io/([^/]+)\$"))
 }
 
+fun String.isCollectionUrl(): Boolean {
+    return this.matches(Regex("^https://itch\\.io/c/\\d+/[a-zA-Z0-9-]+\$"))
+}
+
 fun String.cleanUrl(): String {
     val url = if (this.startsWith("https://")) this else "https://$this"
     return url.substringBefore("?")

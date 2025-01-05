@@ -73,6 +73,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -107,8 +108,10 @@ import com.thriic.itchwatch.ui.common.SearchLayout
 import com.thriic.itchwatch.ui.utils.WatchLayout
 import com.thriic.itchwatch.ui.utils.cleanUrl
 import com.thriic.itchwatch.ui.utils.getId
+import com.thriic.itchwatch.ui.utils.isCollectionUrl
 import com.thriic.itchwatch.ui.utils.isGamePageUrl
 import com.thriic.itchwatch.ui.utils.readTextFile
+import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import kotlin.math.roundToInt
 
@@ -270,6 +273,7 @@ fun LibraryScreen(
     sharedTransitionScope: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope
 ) {
+    viewModel.send(LibraryIntent.SyncRepository)
     val state by viewModel.state.collectAsStateWithLifecycle()
     val filterState by viewModel.filterState.collectAsStateWithLifecycle()
 
@@ -294,7 +298,10 @@ fun LibraryScreen(
     var expanded by remember { mutableStateOf(false) }
     var searchBarOffsetY by remember { mutableIntStateOf(0) }
 
+
     var selectedTags by remember { mutableStateOf(filterState.tags) }
+
+    val listState = rememberLazyListState()
 
     SearchLayout(
         onApplySearch = { query ->
@@ -367,9 +374,10 @@ fun LibraryScreen(
             }
 
         }
+
         LazyColumn(
             contentPadding = contentPadding,
-            state = rememberLazyListState(),
+            state = listState,
             modifier = Modifier.nestedScroll(searchBarConnection),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -445,12 +453,13 @@ fun LibraryScreen(
                             val url = text.cleanUrl()
                             if (url.isGamePageUrl())
                                 viewModel.send(LibraryIntent.AddGame(url))
-                            else viewModel.sendMessage("Invalid URL")
+                            else viewModel.sendMessage("Invalid Link")
                         } else {
                             viewModel.sendMessage("Clipboard is empty")
                         }
                     },
                 )
+                val coroutineScope = rememberCoroutineScope()
                 val contentResolver = LocalContext.current.contentResolver
 
                 var pickedImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -464,6 +473,9 @@ fun LibraryScreen(
                             if (content == null) {
                                 viewModel.sendMessage("find nothing")
                             } else {
+                                coroutineScope.launch {
+                                    listState.scrollToItem(0)
+                                }
                                 viewModel.send(LibraryIntent.AddGames(content))
                             }
                         }
@@ -475,8 +487,7 @@ fun LibraryScreen(
                         val intent = Intent(
                             Intent.ACTION_OPEN_DOCUMENT,
                             MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                        )
-                            .apply {
+                        ).apply {
                                 addCategory(Intent.CATEGORY_OPENABLE)
                             }
                         launcher.launch(intent)
@@ -502,6 +513,9 @@ fun LibraryScreen(
                 DropdownMenuItem(
                     text = { Text("Refresh") },
                     onClick = {
+                        coroutineScope.launch {
+                            listState.scrollToItem(0)
+                        }
                         viewModel.send(LibraryIntent.Refresh)
                     },
                     trailingIcon = {

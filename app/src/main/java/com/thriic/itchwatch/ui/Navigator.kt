@@ -26,4 +26,10 @@ class Navigator {
             }
         }
     }
+
+    suspend fun popBackStack(){
+        withContext(Dispatchers.Main) {
+            navController?.popBackStack()
+        }
+    }
 }
