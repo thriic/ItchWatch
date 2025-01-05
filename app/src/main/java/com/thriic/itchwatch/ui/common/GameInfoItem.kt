@@ -50,7 +50,7 @@ fun GameInfoItem(
             Text(
                 text = it,
                 style = MaterialTheme.typography.bodyMedium,
-                maxLines = 2,
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.paddingFromBaseline(top = 8.dp)
             )

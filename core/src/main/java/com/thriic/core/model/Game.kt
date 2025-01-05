@@ -50,8 +50,8 @@ data class Game(
     val files: List<File>,
     val tags: List<Tag>
 ) {
-    val basic: GameBasic
-        get() = GameBasic(
+    fun toBasic(localInfo: LocalInfo): GameBasic =
+        GameBasic(
             url = url,
             name = name,
             image = image,
@@ -60,7 +60,8 @@ data class Game(
             versionOrFileName = files.getVersionOrFileName(),
             platforms = platforms,
             devLogs = devLogs,
-            filterTags = tags.filter(TagType.Platform, TagType.NormalTag, TagType.Language)
+            filterTags = tags.filter(TagType.Platform, TagType.NormalTag, TagType.Language),
+            localInfo = localInfo
         )
 }
 
@@ -76,8 +77,12 @@ data class GameBasic(
     val versionOrFileName: String?,
     val platforms: Set<Platform>,
     val devLogs: List<DevLogItem>?,
-    val filterTags: List<Tag>
-)
+    val filterTags: List<Tag>,
+    val localInfo: LocalInfo
+){
+    val updated:Boolean
+        get() = localInfo.lastPlayedVersion != null && versionOrFileName != localInfo.lastPlayedVersion
+}
 
 data class Rating(val ratingValue: String, val ratingCount: Int)
 

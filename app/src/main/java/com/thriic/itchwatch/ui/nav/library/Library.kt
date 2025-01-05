@@ -97,6 +97,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.thriic.core.formatTimeDifference
 import com.thriic.core.model.GameBasic
+import com.thriic.core.model.LocalInfo
 import com.thriic.core.model.Platform
 import com.thriic.core.model.Tag
 import com.thriic.core.model.TagType
@@ -432,7 +433,9 @@ fun LibraryScreen(
     LibraryBottomSheet(
         showBottomSheetWithUrl,
         onDismiss = { showBottomSheetWithUrl = null },
-        onRemove = { viewModel.send(LibraryIntent.Remove(showBottomSheetWithUrl!!)) }
+        onRemove = { viewModel.send(LibraryIntent.Remove(showBottomSheetWithUrl!!)) },
+        onStar = { viewModel.send(LibraryIntent.Star(showBottomSheetWithUrl!!)) },
+        onMark = { viewModel.send(LibraryIntent.Mark(showBottomSheetWithUrl!!)) }
     )
 
     @Composable
@@ -444,60 +447,36 @@ fun LibraryScreen(
                 .padding(end = 16.dp, top = 16.dp)
         ) {
             DropdownMenu(expanded = menuExpanded, onDismissRequest = onDismiss) {
-                val clipboard = LocalClipboardManager.current
                 DropdownMenuItem(
-                    text = { Text("import from clipboard") },
+                    text = { Text("Top starred") },
                     onClick = {
-                        if (clipboard.hasText()) {
-                            val text = clipboard.getText()!!.text
-                            val url = text.cleanUrl()
-                            if (url.isGamePageUrl())
-                                viewModel.send(LibraryIntent.AddGame(url))
-                            else viewModel.sendMessage("Invalid Link")
-                        } else {
-                            viewModel.sendMessage("Clipboard is empty")
-                        }
+                        viewModel.send(LibraryIntent.Sort(SortType.Starred))
                     },
-                )
-                val coroutineScope = rememberCoroutineScope()
-                val contentResolver = LocalContext.current.contentResolver
-
-                var pickedImageUri by remember { mutableStateOf<Uri?>(null) }
-                val launcher =
-                    rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-                        Log.i("Library", "selected file URI ${it.data?.data}")
-                        pickedImageUri = it.data?.data
-                        if (pickedImageUri != null) {
-                            val content =
-                                contentResolver.openInputStream(pickedImageUri!!)?.readTextFile()
-                            if (content == null) {
-                                viewModel.sendMessage("find nothing")
-                            } else {
-                                coroutineScope.launch {
-                                    listState.scrollToItem(0)
-                                }
-                                viewModel.send(LibraryIntent.AddGames(content))
-                            }
-                        }
-
+                    trailingIcon = {
+                        if(SortType.Starred in state.sortTypes) Icon(
+                            imageVector = Icons.Default.Done,
+                            contentDescription = null
+                        )
                     }
+                )
+
                 DropdownMenuItem(
-                    text = { Text("import from text file") },
+                    text = { Text("Top updated") },
                     onClick = {
-                        val intent = Intent(
-                            Intent.ACTION_OPEN_DOCUMENT,
-                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                        ).apply {
-                                addCategory(Intent.CATEGORY_OPENABLE)
-                            }
-                        launcher.launch(intent)
+                        viewModel.send(LibraryIntent.Sort(SortType.Updated))
                     },
+                    trailingIcon = {
+                        if(SortType.Updated in state.sortTypes) Icon(
+                            imageVector = Icons.Default.Done,
+                            contentDescription = null
+                        )
+                    }
                 )
                 HorizontalDivider()
                 DropdownMenuItem(
                     text = { Text("Sort") },
                     onClick = {
-                        if (state.sortType == SortType.Name)
+                        if (SortType.Name in state.sortTypes)
                             viewModel.send(LibraryIntent.Sort(SortType.TimeReverse))
                         else
                             viewModel.send(LibraryIntent.Sort(SortType.Name))
@@ -510,6 +489,7 @@ fun LibraryScreen(
                         )
                     }
                 )
+                val coroutineScope = rememberCoroutineScope()
                 DropdownMenuItem(
                     text = { Text("Refresh") },
                     onClick = {
@@ -572,7 +552,7 @@ fun LibraryItem(
                     modifier = Modifier.padding(start = 16.dp),
                     title = gameBasic.name,
                     titleModifier = textModifier,
-                    description = gameBasic.versionOrFileName,
+                    description = if(gameBasic.updated) "[update]"+gameBasic.versionOrFileName+"\n=>"+gameBasic.localInfo.lastPlayedVersion else gameBasic.versionOrFileName,
                 )
             }
             Row(
@@ -636,7 +616,14 @@ fun SearchItemPreview() {
                 pubDate = LocalDateTime.now(),
             )
         ),
-        filterTags = emptyList()
+        filterTags = emptyList(),
+        localInfo = LocalInfo(
+            url = "https://anuke.itch.io/mindustry",
+            blurb = null,
+            lastPlayedVersion = null,
+            lastPlayedTime = null,
+            starred = false
+        )
     )
 //    Surface {
 //        Column {

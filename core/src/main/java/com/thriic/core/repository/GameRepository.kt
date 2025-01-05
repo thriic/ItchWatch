@@ -32,7 +32,7 @@ class GameRepository @Inject constructor(
     private val gameLocalDataSource: GameLocalDataSource
 ) {
 
-    var latestGames: MutableList<Game> = mutableListOf()
+    private var latestGames: MutableList<Game> = mutableListOf()
     private val failedList = mutableListOf<String>()
 
     //fetch a list of game basics
@@ -57,7 +57,8 @@ class GameRepository @Inject constructor(
                                     latestGames.map { if (it.url == game.url) gameFull else it }
                                         .toMutableList() //update member variable
                                 gameLocalDataSource.updateGames(gameFull)//update to database
-                                return@async Result.success(gameFull.basic)
+                                val basicWithLocal = gameFull.toBasic(getLocalInfo(gameFull.url))
+                                return@async Result.success(basicWithLocal)
                             } catch (e: Exception) {
                                 failedList.add(game.url)
                                 this@channelFlow.send(Result.failure<GameBasic>(e))
@@ -74,7 +75,7 @@ class GameRepository @Inject constructor(
             } else {
                 latestGames = gameLocalDataSource.getLocalGames().toMutableList()
                 latestGames.forEach { gameFull ->
-                    this@channelFlow.send(Result.success(gameFull.basic))
+                    this@channelFlow.send(Result.success(gameFull.toBasic(getLocalInfo(gameFull.url))))
                 }
             }
         }.buffer(5)
@@ -145,9 +146,10 @@ class GameRepository @Inject constructor(
             latestGames.add(gameFull)//add to member variable
             gameLocalDataSource.insertGames(gameFull)//insert to database
             //always init localInfo when add a new game
-            gameLocalDataSource.insertLocalInfo(LocalInfo(url, blurb = blurb, lastPlayedVersion = null, lastPlayedTime = null, starred = false))
+            val localInfo = LocalInfo(url, blurb = blurb, lastPlayedVersion = null, lastPlayedTime = null, starred = false)
+            gameLocalDataSource.insertLocalInfo(localInfo)
             Log.i("GameRepository", "added localInfo with $blurb")
-            return Result.success(gameFull.basic)
+            return Result.success(gameFull.toBasic(localInfo))
         } catch (e: Exception) {
             failedList.add(url)
             emit(Result.failure(e))
@@ -169,11 +171,12 @@ class GameRepository @Inject constructor(
         return devLogRemoteDataSource.fetchDevLog(url).getOrNull()
     }
 
-    fun syncGameBasic(): List<GameBasic> {
+    suspend fun syncGameBasic(): List<GameBasic> {
         return latestGames.map { gameFull ->
-            gameFull.basic
+            gameFull.toBasic(getLocalInfo(gameFull.url))
         }
     }
+    fun size() = latestGames.size
 
     suspend fun getGameFull(url: String, refresh: Boolean = false): Game? {
         return if (refresh) {
@@ -191,7 +194,7 @@ class GameRepository @Inject constructor(
         return gameLocalDataSource.getLocalInfo(url)!!
     }
 
-    suspend fun updateLocalInfo(url:String, blurb:String? = null, lastPlayedVersion:String? = null, lastPlayedTime: LocalDateTime? = null, starred:Boolean? = null){
+    suspend fun updateLocalInfo(url:String, blurb:String? = null, lastPlayedVersion:String? = null, lastPlayedTime: LocalDateTime? = null, starred:Boolean? = null): LocalInfo {
         val oldLocalInfo = getLocalInfo(url)
         val updatedLocalInfo = oldLocalInfo.copy(
             blurb = blurb ?: oldLocalInfo.blurb,
@@ -200,6 +203,7 @@ class GameRepository @Inject constructor(
             starred = starred ?: oldLocalInfo.starred
         )
         gameLocalDataSource.updateLocalInfo(updatedLocalInfo)
+        return updatedLocalInfo
     }
 
     suspend fun existLocalGame(url: String): Boolean {

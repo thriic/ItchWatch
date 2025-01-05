@@ -49,7 +49,7 @@ import kotlinx.coroutines.launch
 
 @SuppressLint("SuspiciousIndentation")
 @Composable
-fun LibraryBottomSheet(url:String?,onDismiss: () -> Unit, onRemove: () -> Unit = {}){
+fun LibraryBottomSheet(url:String?,onDismiss: () -> Unit, onRemove: () -> Unit = {}, onStar: () -> Unit, onMark: () -> Unit){
     LaunchedEffect(url) {
 
     }
@@ -59,13 +59,15 @@ fun LibraryBottomSheet(url:String?,onDismiss: () -> Unit, onRemove: () -> Unit =
     BottomSheetContent(
         onDismiss = onDismiss,
         bottomPadding = bottomPadding,
-        onRemove = onRemove
+        onRemove = onRemove,
+        onStar = onStar,
+        onMark = onMark
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3Api::class)
 @Composable
-fun BottomSheetContent(onDismiss: () -> Unit, bottomPadding: Int, onRemove: () -> Unit = {}) {
+fun BottomSheetContent(onDismiss: () -> Unit, bottomPadding: Int, onRemove: () -> Unit = {}, onStar: () -> Unit, onMark: () -> Unit) {
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     ModalBottomSheet(
@@ -88,35 +90,7 @@ fun BottomSheetContent(onDismiss: () -> Unit, bottomPadding: Int, onRemove: () -
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            Log.i("Library", "BottomSheetContent: click")
-                            onRemove()
-                            scope
-                                .launch {
-                                    sheetState.hide()
-
-                                }
-                                .invokeOnCompletion {
-                                    if (!sheetState.isVisible) {
-                                        onDismiss()
-                                    }
-                                }
-                        }
-                        .height(44.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "Remove",
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Start,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                    )
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
+                            onStar()
                             scope
                                 .launch { sheetState.hide() }
                                 .invokeOnCompletion {
@@ -129,7 +103,7 @@ fun BottomSheetContent(onDismiss: () -> Unit, bottomPadding: Int, onRemove: () -
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Settings",
+                        text = "Star",
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Start,
                         modifier = Modifier
@@ -141,6 +115,32 @@ fun BottomSheetContent(onDismiss: () -> Unit, bottomPadding: Int, onRemove: () -
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
+                            onMark()
+                            scope
+                                .launch { sheetState.hide() }
+                                .invokeOnCompletion {
+                                    if (!sheetState.isVisible) {
+                                        onDismiss()
+                                    }
+                                }
+                        }
+                        .height(44.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Mark as played",
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            onRemove()
                             scope
                                 .launch {
                                     sheetState.hide()
@@ -155,7 +155,7 @@ fun BottomSheetContent(onDismiss: () -> Unit, bottomPadding: Int, onRemove: () -
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Logout",
+                        text = "Remove",
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier
                             .fillMaxWidth()
