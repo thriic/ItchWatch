@@ -1,12 +1,8 @@
 package com.thriic.itchwatch.ui.nav.library
 
-import android.content.Intent
-import android.net.Uri
-import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -14,7 +10,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,7 +17,6 @@ import androidx.compose.foundation.layout.ContextualFlowRow
 import androidx.compose.foundation.layout.ContextualFlowRowOverflow
 import androidx.compose.foundation.layout.ContextualFlowRowOverflowScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -54,7 +48,6 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -63,10 +56,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.layout.AnimatedPane
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -85,17 +80,14 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.thriic.core.formatTimeDifference
 import com.thriic.core.model.GameBasic
 import com.thriic.core.model.LocalInfo
@@ -107,12 +99,9 @@ import com.thriic.itchwatch.R
 import com.thriic.itchwatch.ui.common.GameInfoItem
 import com.thriic.itchwatch.ui.common.PlatformRow
 import com.thriic.itchwatch.ui.common.SearchLayout
+import com.thriic.itchwatch.ui.detail.DetailScreen
 import com.thriic.itchwatch.ui.utils.WatchLayout
-import com.thriic.itchwatch.ui.utils.cleanUrl
 import com.thriic.itchwatch.ui.utils.getId
-import com.thriic.itchwatch.ui.utils.isCollectionUrl
-import com.thriic.itchwatch.ui.utils.isGamePageUrl
-import com.thriic.itchwatch.ui.utils.readTextFile
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import kotlin.math.roundToInt
@@ -126,9 +115,11 @@ fun Filter(
     val allTags by remember { mutableStateOf(allFilters) }
 
     val modifier = Modifier.padding(horizontal = 8.dp)
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .verticalScroll(rememberScrollState())) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+    ) {
         ChipRow(
             title = "Platform",
             tags = allTags.filter { it.type == TagType.Platform },
@@ -267,7 +258,14 @@ fun ChipFlowRow(
 
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+fun ListDetailPane() {
+
+}
+
+
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun LibraryScreen(
     layout: WatchLayout,
@@ -305,129 +303,165 @@ fun LibraryScreen(
 
     val listState = rememberLazyListState()
 
-    SearchLayout(
-        onApplySearch = { query ->
-            viewModel.send(
-                LibraryIntent.UpdateFilter(
-                    query,
-                    selectedTags
-                )
-            )
-        },
-        expanded = expanded,
-        onExpandedChange = { expanded = it },
-        title = "search something...",
-        searchFieldHint = "input keyword",
-        searchFieldState = rememberTextFieldState(),
-        searchBarOffsetY = { searchBarOffsetY },
-        trailingIcon = {
-            IconButton(onClick = { menuExpanded = true }) {
-                Icon(
-                    Icons.Default.MoreVert,
-                    contentDescription = null
-                )
-            }
-        },
-        filter = {
-            val tagSet = itemState.flatMap { game ->
-                game.filterTags
-            }.toSet()
-            Filter(tagSet, selectedTags) { tag, selected ->
-                selectedTags = if (selected) {
-                    selectedTags.plus(tag)
-                } else {
-                    selectedTags.minus(tag)
-                }
-            }
-        },
-        //floatingActionButton = TODO()
-    ) { contentPadding ->
-        val density = LocalDensity.current
-        val searchBarConnection = remember {
-            val topPaddingPx = with(density) { contentPadding.calculateTopPadding().roundToPx() }
-            object : NestedScrollConnection {
-                override fun onPostScroll(
-                    consumed: Offset,
-                    available: Offset,
-                    source: NestedScrollSource
-                ): Offset {
-                    val dy = -consumed.y
 
-                    searchBarOffsetY =
-                        (searchBarOffsetY - dy).roundToInt().coerceIn(-topPaddingPx, 0)
-                    return Offset.Zero // We never consume it
-                }
-            }
-        }
+    val navigator = rememberListDetailPaneScaffoldNavigator<String>()
+//    Log.i("Lib", "Navigator${navigator.currentDestination}")
+    BackHandler(navigator.currentDestination != null && navigator.currentDestination?.pane == ListDetailPaneScaffoldRole.Detail) {
+        Log.i("Lib","Back")
+        navigator.navigateBack()
+    }
 
-        if (state.loading) {
-            if (state.progress != null) {
-                val animatedProgress by
-                animateFloatAsState(
-                    targetValue = state.progress!!,
-                    animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
-                )
-                LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth(),
-                    progress = { animatedProgress },
-                )
-            } else {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            }
-
-        }
-
-        LazyColumn(
-            contentPadding = contentPadding,
-            state = listState,
-            modifier = Modifier.nestedScroll(searchBarConnection),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-
-
-            val itemModifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-            val filterItems = itemState.filter {
-                it.filterTags.containsAll(filterState.tags) && it.name.contains(
-                    filterState.keyword,
-                    ignoreCase = true
-                )
-            }
-            itemsIndexed(filterItems, key = { index, item -> index }) { index, item ->
-                val id = item.url.getId()
-                with(sharedTransitionScope) {
-                    LibraryItem(
-                        gameBasic = item,
-                        modifier = itemModifier,
-                        onClick = { viewModel.send(LibraryIntent.ClickItem(item.url, id)) },
-                        onLongClick = { showBottomSheetWithUrl = item.url },
-                        imageModifier = Modifier
-                            .sharedElement(
-                                sharedTransitionScope.rememberSharedContentState(key = "image-$id"),
-                                animatedVisibilityScope = animatedContentScope
+    ListDetailPaneScaffold(
+        directive = navigator.scaffoldDirective,
+        value = navigator.scaffoldValue,
+        listPane = {
+            AnimatedPane {
+                SearchLayout(
+                    onApplySearch = { query ->
+                        viewModel.send(
+                            LibraryIntent.UpdateFilter(
+                                query,
+                                selectedTags
                             )
-                            //.size(100.dp)
-                            .sizeIn(maxHeight = 80.dp)
-                            .aspectRatio(315f / 250f)
-                            .clip(RoundedCornerShape(8.dp)),
-                        textModifier = Modifier.sharedElement(
-                            sharedTransitionScope.rememberSharedContentState(key = "text-$id"),
-                            animatedVisibilityScope = animatedContentScope,
-                        ),
-                        showStar = SortType.Starred in state.sortTypes
+                        )
+                    },
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it },
+                    title = "search something...",
+                    searchFieldHint = "input keyword",
+                    searchFieldState = rememberTextFieldState(),
+                    searchBarOffsetY = { searchBarOffsetY },
+                    trailingIcon = {
+                        IconButton(onClick = { menuExpanded = true }) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = null
+                            )
+                        }
+                    },
+                    filter = {
+                        val tagSet = itemState.flatMap { game ->
+                            game.filterTags
+                        }.toSet()
+                        Filter(tagSet, selectedTags) { tag, selected ->
+                            selectedTags = if (selected) {
+                                selectedTags.plus(tag)
+                            } else {
+                                selectedTags.minus(tag)
+                            }
+                        }
+                    },
+                    //floatingActionButton = TODO()
+                ) { contentPadding ->
+                    val density = LocalDensity.current
+                    val searchBarConnection = remember {
+                        val topPaddingPx =
+                            with(density) { contentPadding.calculateTopPadding().roundToPx() }
+                        object : NestedScrollConnection {
+                            override fun onPostScroll(
+                                consumed: Offset,
+                                available: Offset,
+                                source: NestedScrollSource
+                            ): Offset {
+                                val dy = -consumed.y
+
+                                searchBarOffsetY =
+                                    (searchBarOffsetY - dy).roundToInt().coerceIn(-topPaddingPx, 0)
+                                return Offset.Zero // We never consume it
+                            }
+                        }
+                    }
+
+                    if (state.loading) {
+                        if (state.progress != null) {
+                            val animatedProgress by
+                            animateFloatAsState(
+                                targetValue = state.progress!!,
+                                animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
+                            )
+                            LinearProgressIndicator(
+                                modifier = Modifier.fillMaxWidth(),
+                                progress = { animatedProgress },
+                            )
+                        } else {
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        }
+
+                    }
+
+                    LazyColumn(
+                        contentPadding = contentPadding,
+                        state = listState,
+                        modifier = Modifier.nestedScroll(searchBarConnection),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+
+
+                        val itemModifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                        val filterItems = itemState.filter {
+                            it.filterTags.containsAll(filterState.tags) && it.name.contains(
+                                filterState.keyword,
+                                ignoreCase = true
+                            )
+                        }
+
+                        itemsIndexed(filterItems, key = { index, item -> index }) { index, item ->
+                            val scope = rememberCoroutineScope()
+                            val id = item.url.getId()
+                            with(sharedTransitionScope) {
+                                LibraryItem(
+                                    gameBasic = item,
+                                    modifier = itemModifier,
+                                    onClick = {
+                                        viewModel.send(LibraryIntent.ClickItem(item.url){ navigator.navigateTo(ListDetailPaneScaffoldRole.Detail, item.url) })
+
+                                    },
+                                    onLongClick = { showBottomSheetWithUrl = item.url },
+                                    imageModifier = Modifier
+//                                        .sharedElement(
+//                                            sharedTransitionScope.rememberSharedContentState(key = "image-$id"),
+//                                            animatedVisibilityScope = animatedContentScope
+//                                        )
+                                        //.size(100.dp)
+                                        .sizeIn(maxHeight = 80.dp)
+                                        .aspectRatio(315f / 250f)
+                                        .clip(RoundedCornerShape(8.dp)),
+//                                    textModifier = Modifier.sharedElement(
+//                                        sharedTransitionScope.rememberSharedContentState(key = "text-$id"),
+//                                        animatedVisibilityScope = animatedContentScope,
+//                                    ),
+                                    showStar = SortType.Starred in state.sortTypes
 //                        image = ImageRequest.Builder(LocalContext.current)
 //                            .data(item.image)
 //                            .crossfade(true)
 //                            .placeholderMemoryCacheKey("image-$id")
 //                            .memoryCacheKey("image-$id")
 //                            .build()
+                                )
+                            }
+                        }
+
+                    }
+                }
+            }
+        },
+        detailPane = {
+            AnimatedPane {
+                // Show the detail pane content if selected item is available
+                navigator.currentDestination?.content?.let {
+                    Log.i("Lib",it)
+                    DetailScreen(
+                        url = it,
+                        viewModel = viewModel
                     )
                 }
             }
+        },
+    )
 
-        }
-    }
+
 
 
 
@@ -435,7 +469,7 @@ fun LibraryScreen(
     LibraryBottomSheet(
         showBottomSheetWithUrl,
         onDismiss = { showBottomSheetWithUrl = null },
-        onRemove = { viewModel.send(LibraryIntent.Remove(showBottomSheetWithUrl!!)) },
+        onRemove = { viewModel.send(LibraryIntent.Remove(showBottomSheetWithUrl!!){ navigator.navigateBack() }) },
         onStar = { viewModel.send(LibraryIntent.Star(showBottomSheetWithUrl!!)) },
         onMark = { viewModel.send(LibraryIntent.Mark(showBottomSheetWithUrl!!)) }
     )
@@ -455,7 +489,7 @@ fun LibraryScreen(
                         viewModel.send(LibraryIntent.Sort(SortType.Starred))
                     },
                     trailingIcon = {
-                        if(SortType.Starred in state.sortTypes) Icon(
+                        if (SortType.Starred in state.sortTypes) Icon(
                             imageVector = Icons.Default.Done,
                             contentDescription = null
                         )
@@ -468,7 +502,7 @@ fun LibraryScreen(
                         viewModel.send(LibraryIntent.Sort(SortType.Updated))
                     },
                     trailingIcon = {
-                        if(SortType.Updated in state.sortTypes) Icon(
+                        if (SortType.Updated in state.sortTypes) Icon(
                             imageVector = Icons.Default.Done,
                             contentDescription = null
                         )
@@ -527,7 +561,7 @@ fun LibraryItem(
         .size(100.dp)
         .clip(RoundedCornerShape(8.dp)),
     textModifier: Modifier = Modifier,
-    showStar:Boolean = false
+    showStar: Boolean = false
 ) {
     Card(
         modifier = modifier
@@ -555,7 +589,7 @@ fun LibraryItem(
                     modifier = Modifier.padding(start = 16.dp),
                     title = gameBasic.name,
                     titleModifier = textModifier,
-                    description = if(gameBasic.updated) "[update]"+gameBasic.versionOrFileName+"\n=>"+gameBasic.localInfo.lastPlayedVersion else gameBasic.versionOrFileName,
+                    description = if (gameBasic.updated) "[update]" + gameBasic.versionOrFileName + "\n=>" + gameBasic.localInfo.lastPlayedVersion else gameBasic.versionOrFileName,
                 )
             }
             Row(
@@ -595,7 +629,11 @@ fun LibraryItem(
                                 .background(MaterialTheme.colorScheme.inverseOnSurface)
                                 .padding(8.dp)
                         ) {
-                            Icon(imageVector = Icons.Default.Star,contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
                         }
                     }
                 }

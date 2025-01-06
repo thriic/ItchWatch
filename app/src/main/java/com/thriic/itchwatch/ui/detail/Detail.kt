@@ -1,12 +1,9 @@
 package com.thriic.itchwatch.ui.detail
 
-import android.widget.Toast
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -23,9 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.Star
-import androidx.compose.material.icons.sharp.Star
-import androidx.compose.material.icons.twotone.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -38,14 +32,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -53,10 +43,6 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.semantics.isTraversalGroup
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.traversalIndex
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -65,7 +51,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.thriic.core.formatTimeDifference
@@ -75,25 +61,27 @@ import com.thriic.itchwatch.ui.theme.ItchWatchTheme
 import com.thriic.core.model.TagType
 import com.thriic.core.model.filter
 import com.thriic.core.model.getContentLinks
-import com.thriic.core.network.model.DevLog
 import com.thriic.core.network.model.DevLogItem
 import com.thriic.itchwatch.R
 import com.thriic.itchwatch.ui.common.PlatformIcon
+import com.thriic.itchwatch.ui.nav.library.LibraryIntent
+import com.thriic.itchwatch.ui.nav.library.LibraryViewModel
 import com.thriic.itchwatch.ui.utils.Href
 import com.thriic.itchwatch.ui.utils.getHref
 import com.thriic.itchwatch.ui.utils.phraseSocialUrl
 
 
-
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun DetailScreen(
-    id: String,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope,
-    viewModel: DetailViewModel
+    url: String,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedContentScope: AnimatedContentScope? = null,
+    viewModel: LibraryViewModel
 ) {
-    val state by viewModel.state.collectAsState()
+    val uiState by viewModel.detailState.collectAsStateWithLifecycle()
+    val (game, localInfo) = uiState
+    if(game == null || localInfo == null) throw Exception()
     Surface {
         with(sharedTransitionScope) {
             LazyColumn(
@@ -103,9 +91,7 @@ fun DetailScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                when (val uiState = state) {
-                    is DetailUiState.Ready -> {
-                        val game = uiState.game
+
 //                        Row {
 //                            IconButton(
 //                                onClick = { },
@@ -115,99 +101,80 @@ fun DetailScreen(
 //                                Icon(Icons.Default.Share, contentDescription = null)
 //                            }
 //                        }
-                        item {
-                            AsyncImage(
-                                model = ImageRequest.Builder(LocalContext.current)
-                                    .data(game.image)
-                                    .crossfade(true)
-                                    .placeholderMemoryCacheKey("image-$id")
-                                    .memoryCacheKey("image-$id")
-                                    .build(),
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .statusBarsPadding()
-                                    .sharedElement(
-                                        sharedTransitionScope.rememberSharedContentState(key = "image-$id"),
-                                        animatedVisibilityScope = animatedContentScope
-                                    )
-                                    .aspectRatio(315f / 250f)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .fillMaxWidth()
+                item {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(game.image)
+                            .crossfade(true)
+                            .placeholderMemoryCacheKey("image-${game.url}")
+                            .memoryCacheKey("image-${game.url}")
+                            .build(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .statusBarsPadding()
+//                                    .sharedElement(
+//                                        sharedTransitionScope.rememberSharedContentState(key = "image-$id"),
+//                                        animatedVisibilityScope = animatedContentScope
+//                                    )
+                            .aspectRatio(315f / 250f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .fillMaxWidth()
 
-                            )
-                        }
+                    )
+                }
 
-                        val cardModifier = Modifier.fillMaxWidth()
-                        item {
-                            val clipboard = LocalClipboardManager.current
-                            val uriHandler = LocalUriHandler.current
-                            MainCard(
-                                title = game.name,
-                                author = game.tags.filter(TagType.Author)
-                                    .joinToString(",") { it.displayName },
-                                updatedTime = game.updatedTime?.formatTimeDifference(),
-                                publishedTime = game.publishedTime?.formatTimeDifference(),
-                                cardModifier = cardModifier,
-                                titleModifier = Modifier
-                                    .sharedElement(
-                                        sharedTransitionScope.rememberSharedContentState(key = "text-$id"),
-                                        animatedVisibilityScope = animatedContentScope
-                                    ),
-                                starred = uiState.starred,
-                                onChangeStarred = { starred ->
-                                    viewModel.send(
-                                        DetailIntent.Starred(
-                                            starred
-                                        )
-                                    )
-                                },
-                                onShare = {
-                                    uriHandler.openUri(game.url)
-                                    //clipboard.setText(AnnotatedString(game.url))
-                                    //viewModel.sendMessage("Link copied to clipboard")
-                                }
-                            )
+                val cardModifier = Modifier.fillMaxWidth()
+                item {
+                    val clipboard = LocalClipboardManager.current
+                    val uriHandler = LocalUriHandler.current
+                    MainCard(
+                        title = game.name,
+                        author = game.tags.filter(TagType.Author)
+                            .joinToString(",") { it.displayName },
+                        updatedTime = game.updatedTime?.formatTimeDifference(),
+                        publishedTime = game.publishedTime?.formatTimeDifference(),
+                        cardModifier = cardModifier,
+                        titleModifier = Modifier,
+//                                    .sharedElement(
+//                                        sharedTransitionScope.rememberSharedContentState(key = "text-$id"),
+//                                        animatedVisibilityScope = animatedContentScope
+//                                    ),
+                        starred = localInfo.starred,
+                        onChangeStarred = { starred ->
+                            viewModel.send(LibraryIntent.Star(game.url))
+                        },
+                        onShare = {
+                            uriHandler.openUri(game.url)
+                            //clipboard.setText(AnnotatedString(game.url))
+                            //viewModel.sendMessage("Link copied to clipboard")
                         }
-                        if(game.devLogs.isNotEmpty()) {
-                            item {
-                                DevLogCard(cardModifier = cardModifier, devLogs = game.devLogs)
-                            }
-                        }
-                        if(game.files.isNotEmpty()) {
-                            item {
-                                FileCard(cardModifier = cardModifier, files = game.files)
-                            }
-                        }
-                        val hrefs = (game.tags.getHref() + (game.content?.let { getContentLinks(it) } ?: emptyList())).phraseSocialUrl()
-                        if(hrefs.isNotEmpty()){
-                            item {
-                                LinkCard(cardModifier = cardModifier, links = hrefs)
-                            }
-                        }
-                        item {
-                            Spacer(modifier = Modifier.navigationBarsPadding())
-                        }
-
+                    )
+                }
+                if (game.devLogs.isNotEmpty()) {
+                    item {
+                        DevLogCard(cardModifier = cardModifier, devLogs = game.devLogs)
                     }
-
-                    else -> {}
+                }
+                if (game.files.isNotEmpty()) {
+                    item {
+                        FileCard(cardModifier = cardModifier, files = game.files)
+                    }
+                }
+                val hrefs = (game.tags.getHref() + (game.content?.let { getContentLinks(it) }
+                    ?: emptyList())).phraseSocialUrl()
+                if (hrefs.isNotEmpty()) {
+                    item {
+                        LinkCard(cardModifier = cardModifier, links = hrefs)
+                    }
+                }
+                item {
+                    Spacer(modifier = Modifier.navigationBarsPadding())
                 }
 
             }
-        }
-    }
 
-    val context = LocalContext.current
-    val toastMsg by viewModel.toastMessage.collectAsState()
-    LaunchedEffect(toastMsg) {
-        if (toastMsg != null) {
-            Toast.makeText(
-                context,
-                toastMsg,
-                Toast.LENGTH_SHORT,
-            ).show()
-            viewModel.sendMessage(null)
+
         }
     }
 }
@@ -258,7 +225,10 @@ fun MainCard(
                         onClick = { onChangeStarred(true) },
                         colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.inverseOnSurface)
                     ) {
-                        Icon(if(starred) Icons.Default.Star else ImageVector.vectorResource(R.drawable.outline_star), contentDescription = null)
+                        Icon(
+                            if (starred) Icons.Default.Star else ImageVector.vectorResource(R.drawable.outline_star),
+                            contentDescription = null
+                        )
                     }
                     IconButton(
                         onClick = onShare,
@@ -339,10 +309,18 @@ fun MainCard(
 @Composable
 fun FileCard(
     cardModifier: Modifier = Modifier,
-    files:List<File>
+    files: List<File>
 ) {
-    Card(modifier = cardModifier, onClick = {}, colors = CardDefaults.cardColors(containerColor =MaterialTheme.colorScheme.surfaceVariant)) {
-        Text("File", modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp), style = MaterialTheme.typography.titleLarge)
+    Card(
+        modifier = cardModifier,
+        onClick = {},
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Text(
+            "File",
+            modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp),
+            style = MaterialTheme.typography.titleLarge
+        )
         files.forEach { file ->
             ListItem(
                 headlineContent = {
@@ -363,7 +341,7 @@ fun FileCard(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         modifier = Modifier.fillMaxHeight()
                     ) {
-                        PlatformIcon(file.platform,Modifier.size(16.dp))
+                        PlatformIcon(file.platform, Modifier.size(16.dp))
                     }
                 },
                 trailingContent = {
@@ -392,7 +370,11 @@ fun DevLogCard(
     devLogs: List<DevLogItem>
 ) {
     val uriHandler = LocalUriHandler.current
-    Card(modifier = cardModifier, onClick = {}, colors = CardDefaults.cardColors(containerColor =MaterialTheme.colorScheme.surfaceVariant)) {
+    Card(
+        modifier = cardModifier,
+        onClick = {},
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
 //        val underlineModifier = Modifier.drawBehind {
 //            val strokeWidthPx = 1.dp.toPx()
 //            val verticalOffset = size.height - 2.sp.toPx()
@@ -403,7 +385,11 @@ fun DevLogCard(
 //                end = Offset(size.width, verticalOffset)
 //            )
 //        }
-        Text("Dev Log", modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp), style = MaterialTheme.typography.titleLarge)
+        Text(
+            "Dev Log",
+            modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp),
+            style = MaterialTheme.typography.titleLarge
+        )
         devLogs.forEach { devLogItem ->
             ListItem(
                 headlineContent = {
@@ -413,7 +399,7 @@ fun DevLogCard(
                                 LinkAnnotation.Url(
                                     devLogItem.link,
                                     TextLinkStyles(style = SpanStyle(color = Color.Blue))
-                                ){
+                                ) {
                                     val url = (it as LinkAnnotation.Url).url
                                     uriHandler.openUri(url)
                                 }
@@ -431,12 +417,12 @@ fun DevLogCard(
                     .fillMaxWidth(),
                 colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 trailingContent = {
-                        Text(
-                            devLogItem.pubDate.formatTimeDifference(),
-                            maxLines = 1,
-                            style = MaterialTheme.typography.bodySmall,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                    Text(
+                        devLogItem.pubDate.formatTimeDifference(),
+                        maxLines = 1,
+                        style = MaterialTheme.typography.bodySmall,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 },
             )
         }
@@ -447,11 +433,19 @@ fun DevLogCard(
 @Composable
 fun LinkCard(
     cardModifier: Modifier = Modifier,
-    links:List<Href>
+    links: List<Href>
 ) {
-    Card(modifier = cardModifier, onClick = {}, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+    Card(
+        modifier = cardModifier,
+        onClick = {},
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
         val uriHandler = LocalUriHandler.current
-        Text("Links", modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp), style = MaterialTheme.typography.titleLarge)
+        Text(
+            "Links",
+            modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp),
+            style = MaterialTheme.typography.titleLarge
+        )
         Text(
             buildAnnotatedString {
                 links.forEach { link ->
@@ -495,7 +489,10 @@ fun MainCardPreview() {
 @Preview
 @Composable
 fun FileCardPreview() {
-    val files = listOf(File("win0.64.zip",Platform.WINDOWS,"10 MB"),File("linux0.64.zip",Platform.LINUX,"11 MB"))
+    val files = listOf(
+        File("win0.64.zip", Platform.WINDOWS, "10 MB"),
+        File("linux0.64.zip", Platform.LINUX, "11 MB")
+    )
     ItchWatchTheme {
         Surface() {
             FileCard(

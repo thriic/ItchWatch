@@ -7,21 +7,30 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavBackStackEntry
 import com.thriic.core.repository.GameRepository
 import com.thriic.itchwatch.ui.utils.decodeUrl
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
-import javax.inject.Inject
 
-@HiltViewModel
-class DetailViewModel @Inject constructor(
+
+@HiltViewModel(assistedFactory = DetailViewModel.DetailViewModelFactory::class)
+class DetailViewModel @AssistedInject constructor(
     private val repository: GameRepository,
-    savedStateHandle: SavedStateHandle
+    @Assisted val url: String
 ) : ViewModel() {
-    private val url = savedStateHandle.get<String>("url")?.decodeUrl() ?: throw Exception("url is null")
+    @AssistedFactory
+    interface DetailViewModelFactory {
+        fun create(url: String): DetailViewModel
+    }
+    public override fun onCleared() {
+        super.onCleared()
+        Log.i("Detail ViewModel", "Detail Clear")
+    }
+   // private val url = //savedStateHandle.get<String>("url")?.decodeUrl() ?: throw Exception("url is null")
 
     private val _uiState = MutableStateFlow<DetailUiState>(DetailUiState.Init)
     val state: StateFlow<DetailUiState> = _uiState.asStateFlow()
@@ -46,7 +55,6 @@ class DetailViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val game = repository.getGameFull(url)!! //?: repository.getGameFull(url, true)!!
-                Log.i("Detail ViewModel",game.toString())
                 val starred = repository.existLocalGame(url)
                 _uiState.value = DetailUiState.Ready(
                     game,

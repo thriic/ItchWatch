@@ -40,6 +40,10 @@ class LibraryViewModel @Inject constructor(
     val filterState: StateFlow<FilterState>
         get() = _filterState
 
+    private val _detailState = MutableStateFlow(DetailState(null,null))
+    val detailState: StateFlow<DetailState>
+        get() = _detailState
+
     private val _toastMessage = MutableStateFlow<String?>(null)
     val toastMessage = _toastMessage.asStateFlow()
 
@@ -47,6 +51,10 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             _toastMessage.emit(message)
         }
+    }
+
+    override fun onCleared() {
+        Log.i("Lib ViewModel", "Lib Clear")
     }
 
     private suspend fun update(uiState: LibraryUiState) = _uiState.emit(uiState)
@@ -92,7 +100,9 @@ class LibraryViewModel @Inject constructor(
 
             is LibraryIntent.ClickItem -> {
                 Log.i("Lib ViewModel", "ClickItem: ${intent.url}")
-                navigator.navigate("detail?url=${intent.url.encodeUrl()}&id=${intent.id}")
+                //navigator.navigate("detail?url=${intent.url.encodeUrl()}&id=${intent.id}")
+                _detailState.value = DetailState(repository.getGameFull(intent.url),repository.getLocalInfo(intent.url))
+                intent.callback()
             }
 
 
@@ -185,6 +195,7 @@ class LibraryViewModel @Inject constructor(
                 } else {
                     sendMessage("failed to remove")
                 }
+                intent.callback()
             }
 
             is LibraryIntent.Mark -> {
@@ -193,6 +204,8 @@ class LibraryViewModel @Inject constructor(
                 val updatedLocalInfo = repository.updateLocalInfo(url = intent.url, lastPlayedTime = LocalDateTime.now(), lastPlayedVersion = gameBasic.versionOrFileName)
                 _items.value =
                     _items.value.map { if (it.url == intent.url) gameBasic.copy(localInfo = updatedLocalInfo) else it }
+                if(_detailState.value.game?.url == intent.url) _detailState.value = _detailState.value.copy(localInfo = updatedLocalInfo)
+                sort()
                 sendMessage("marked")
             }
 
@@ -202,6 +215,8 @@ class LibraryViewModel @Inject constructor(
                 val updatedLocalInfo = repository.updateLocalInfo(url = intent.url, starred = !gameBasic.localInfo.starred)
                 _items.value =
                     _items.value.map { if (it.url == intent.url) gameBasic.copy(localInfo = updatedLocalInfo) else it }
+                if(_detailState.value.game?.url == intent.url) _detailState.value = _detailState.value.copy(localInfo = updatedLocalInfo)
+                sort()
                 sendMessage(if(gameBasic.localInfo.starred) "unstarred" else "starred")
             }
         }
@@ -273,8 +288,8 @@ class LibraryViewModel @Inject constructor(
 sealed interface LibraryIntent {
     //data class AddGame(val url: String) : LibraryIntent
     data object Refresh : LibraryIntent
-    data class ClickItem(val url: String, val id: String) : LibraryIntent
-    data class Remove(val url: String) : LibraryIntent
+    data class ClickItem(val url: String, val callback: ()->Unit) : LibraryIntent
+    data class Remove(val url: String, val callback: ()->Unit) : LibraryIntent
     data class Star(val url: String) : LibraryIntent
     data class Mark(val url: String) : LibraryIntent
     //data class AddGames(val text: String) : LibraryIntent

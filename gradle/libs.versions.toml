@@ -1,7 +1,7 @@
 [versions]
-agp = "8.5.0"
+agp = "8.5.2"
 coilCompose = "2.7.0"
-constraintlayoutCompose = "1.0.1"
+constraintlayoutCompose = "1.1.0"
 gson = "2.11.0"
 hiltAndroid = "2.51.1"
 hiltAndroidCompiler = "2.51.1"
@@ -15,9 +15,9 @@ kotlinxCoroutinesCore = "1.9.0"
 kotlinxCoroutinesTest = "1.9.0"
 ksoupHtml = "0.4.0"
 ksoupLite = "0.1.9"
-lifecycleRuntimeKtx = "2.8.6"
-activityCompose = "1.8.0"
-composeBom = "2024.09.02"
+lifecycleRuntimeKtx = "2.8.7"
+activityCompose = "1.9.3"
+composeBom = "2024.12.01"
 jetbrainsKotlinJvm = "1.9.0"
 okhttp = "4.12.0"
 roomCompiler = "2.6.1"
@@ -25,11 +25,14 @@ roomKtx = "2.6.1"
 roomRuntime = "2.6.1"
 rssparser = "6.0.8"
 testng = "6.9.6"
-navigationCompose = "2.8.1"
+navigationCompose = "2.8.5"
 appcompat = "1.7.0"
-material = "1.10.0"
+material = "1.12.0"
 
 [libraries]
+androidx-adaptive = { module = "androidx.compose.material3.adaptive:adaptive" }
+androidx-adaptive-layout = { module = "androidx.compose.material3.adaptive:adaptive-layout" }
+androidx-adaptive-navigation = { module = "androidx.compose.material3.adaptive:adaptive-navigation" }
 androidx-constraintlayout-compose = { module = "androidx.constraintlayout:constraintlayout-compose", version.ref = "constraintlayoutCompose" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }

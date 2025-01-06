@@ -84,12 +84,12 @@ fun ItchWatchApp(
             ) { backStackEntry ->
                 val id =
                     backStackEntry.arguments?.getString("id") ?: throw Exception("id is null")
-                DetailScreen(
-                    id = id,
-                    animatedContentScope = this@composable,
-                    sharedTransitionScope = this@SharedTransitionLayout,
-                    viewModel = hiltViewModel<DetailViewModel>(backStackEntry)
-                )
+//                DetailScreen(
+//                    id = id,
+//                    animatedContentScope = this@composable,
+//                    sharedTransitionScope = this@SharedTransitionLayout,
+//                    viewModel = hiltViewModel<DetailViewModel>(backStackEntry)
+//                )
             }
             composable("tag") {
             }

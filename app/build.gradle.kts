@@ -73,7 +73,11 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    //adaptive
     implementation(libs.androidx.material3.adaptive.navigation.suite)
+    implementation(libs.androidx.adaptive)
+    implementation(libs.androidx.adaptive.layout)
+    implementation(libs.androidx.adaptive.navigation)
     implementation(libs.androidx.constraintlayout.compose)
     implementation(libs.coil.compose)
     implementation(libs.androidx.hilt.navigation.compose)
