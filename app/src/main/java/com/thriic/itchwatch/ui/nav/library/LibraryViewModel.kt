@@ -77,6 +77,7 @@ class LibraryViewModel @Inject constructor(
                     }
                 }
                 update(_uiState.value.copy(loading = false, progress = null))
+                sort()
             }
 
 //            is LibraryIntent.AddGame -> {

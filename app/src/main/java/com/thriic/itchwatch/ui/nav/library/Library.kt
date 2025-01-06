@@ -578,16 +578,6 @@ fun LibraryItem(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    if (gameBasic.localInfo.starred && showStar) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(90.dp))
-                                .background(MaterialTheme.colorScheme.inverseOnSurface)
-                                .padding(8.dp)
-                        ) {
-                            Icon(imageVector = Icons.Default.Star,contentDescription = null, modifier = Modifier.size(16.dp))
-                        }
-                    }
                     if (textBox.isNotEmpty()) {
                         Box(
                             modifier = Modifier
@@ -596,6 +586,16 @@ fun LibraryItem(
                                 .padding(8.dp)
                         ) {
                             Text(textBox, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                    if (gameBasic.localInfo.starred && showStar) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(90.dp))
+                                .background(MaterialTheme.colorScheme.inverseOnSurface)
+                                .padding(8.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.Star,contentDescription = null, modifier = Modifier.size(16.dp))
                         }
                     }
                 }
