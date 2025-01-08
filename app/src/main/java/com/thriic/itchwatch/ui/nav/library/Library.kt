@@ -585,11 +585,16 @@ fun LibraryItem(
                         modifier = imageModifier,
                     )
                 }
+                val versionDisplay = when {
+                    gameBasic.updated -> "[update]" + gameBasic.versionOrFileName + "\n=>" + gameBasic.localInfo.lastPlayedVersion
+                    gameBasic.localInfo.lastPlayedVersion!=null -> gameBasic.versionOrFileName+"✓"
+                    else -> gameBasic.versionOrFileName
+                }
                 GameInfoItem(
                     modifier = Modifier.padding(start = 16.dp),
                     title = gameBasic.name,
                     titleModifier = textModifier,
-                    description = if (gameBasic.updated) "[update]" + gameBasic.versionOrFileName + "\n=>" + gameBasic.localInfo.lastPlayedVersion else gameBasic.versionOrFileName,
+                    description = versionDisplay,
                 )
             }
             Row(
