@@ -134,6 +134,7 @@ fun DetailScreen(
                             .joinToString(",") { it.displayName },
                         updatedTime = game.updatedTime?.formatTimeDifference(),
                         publishedTime = game.publishedTime?.formatTimeDifference(),
+                        playedTime = localInfo.lastPlayedTime?.formatTimeDifference(),
                         cardModifier = cardModifier,
                         titleModifier = Modifier,
 //                                    .sharedElement(
@@ -185,6 +186,7 @@ fun MainCard(
     author: String,
     updatedTime: String? = null,
     publishedTime: String? = null,
+    playedTime: String? = null,
     cardModifier: Modifier = Modifier,
     titleModifier: Modifier = Modifier,
     starred: Boolean = false,
@@ -239,7 +241,7 @@ fun MainCard(
                 }
             },
         )
-        if (updatedTime != null || publishedTime != null)
+        if (updatedTime != null || publishedTime != null || playedTime != null)
             HorizontalDivider()
         if (updatedTime != null) {
             ListItem(
@@ -293,6 +295,36 @@ fun MainCard(
                     ) {
                         Text(
                             publishedTime,
+                            maxLines = 1,
+                            style = MaterialTheme.typography.bodySmall,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                },
+            )
+        }
+        if (playedTime != null) {
+            ListItem(
+                headlineContent = {
+                    Text(
+                        "Last Played",
+                        maxLines = 1,
+                        style = MaterialTheme.typography.titleSmall,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                trailingContent = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.fillMaxHeight()
+                    ) {
+                        Text(
+                            playedTime,
                             maxLines = 1,
                             style = MaterialTheme.typography.bodySmall,
                             overflow = TextOverflow.Ellipsis
@@ -479,6 +511,7 @@ fun MainCardPreview() {
             MainCard(
                 title = "title",
                 author = "author",
+                playedTime = "123456789",
                 onChangeStarred = {},
                 onShare = {}
             )
