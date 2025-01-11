@@ -311,6 +311,22 @@ fun LibraryScreen(
         navigator.navigateBack()
     }
 
+    if (state.loading) {
+        if (state.progress != null) {
+            val animatedProgress by
+            animateFloatAsState(
+                targetValue = state.progress!!,
+                animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
+            )
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth(),
+                progress = { animatedProgress },
+            )
+        } else {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
+
+    }
     ListDetailPaneScaffold(
         directive = navigator.scaffoldDirective,
         value = navigator.scaffoldValue,
@@ -372,22 +388,7 @@ fun LibraryScreen(
                         }
                     }
 
-                    if (state.loading) {
-                        if (state.progress != null) {
-                            val animatedProgress by
-                            animateFloatAsState(
-                                targetValue = state.progress!!,
-                                animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
-                            )
-                            LinearProgressIndicator(
-                                modifier = Modifier.fillMaxWidth(),
-                                progress = { animatedProgress },
-                            )
-                        } else {
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                        }
 
-                    }
 
                     LazyColumn(
                         contentPadding = contentPadding,
@@ -469,7 +470,7 @@ fun LibraryScreen(
     LibraryBottomSheet(
         showBottomSheetWithUrl,
         onDismiss = { showBottomSheetWithUrl = null },
-        onRemove = { viewModel.send(LibraryIntent.Remove(showBottomSheetWithUrl!!){ navigator.navigateBack() }) },
+        onRemove = { viewModel.send(LibraryIntent.Remove(showBottomSheetWithUrl!!){ if(navigator.currentDestination != null && navigator.currentDestination?.pane == ListDetailPaneScaffoldRole.Detail) navigator.navigateBack() }) },
         onStar = { viewModel.send(LibraryIntent.Star(showBottomSheetWithUrl!!)) },
         onMark = { viewModel.send(LibraryIntent.Mark(showBottomSheetWithUrl!!)) }
     )
@@ -586,7 +587,7 @@ fun LibraryItem(
                     )
                 }
                 val versionDisplay = when {
-                    gameBasic.updated -> "[update]" + gameBasic.versionOrFileName + "\n=>" + gameBasic.localInfo.lastPlayedVersion
+                    gameBasic.updated -> "[update]" + gameBasic.localInfo.lastPlayedVersion + "\n=>" + gameBasic.versionOrFileName
                     gameBasic.localInfo.lastPlayedVersion!=null -> gameBasic.versionOrFileName+"✓"
                     else -> gameBasic.versionOrFileName
                 }

@@ -23,8 +23,8 @@ val androidVersionRegex = Regex(
 )
 val versionRegex = Regex("((v|ver.?)\\s*[0-9.]*[0-9]+[a-y]?|build\\s*[0-9.]*[0-9]|[0-9.]{2,4}[0-9])", RegexOption.IGNORE_CASE)
 
-fun List<File>.getVersionOrFileName(): String {
-    if (isEmpty()) return ""
+fun List<File>.getVersionOrFileName(): String? {
+    if (isEmpty()) return null
     val windowsFile = this.find { it.platform == Platform.WINDOWS }
     //check windows file name
     if (windowsFile != null) {
