@@ -311,170 +311,6 @@ fun LibraryScreen(
         navigator.navigateBack()
     }
 
-    if (state.loading) {
-        if (state.progress != null) {
-            val animatedProgress by
-            animateFloatAsState(
-                targetValue = state.progress!!,
-                animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
-            )
-            LinearProgressIndicator(
-                modifier = Modifier.fillMaxWidth(),
-                progress = { animatedProgress },
-            )
-        } else {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-        }
-
-    }
-    ListDetailPaneScaffold(
-        directive = navigator.scaffoldDirective,
-        value = navigator.scaffoldValue,
-        listPane = {
-            AnimatedPane {
-                SearchLayout(
-                    onApplySearch = { query ->
-                        viewModel.send(
-                            LibraryIntent.UpdateFilter(
-                                query,
-                                selectedTags
-                            )
-                        )
-                    },
-                    expanded = expanded,
-                    onExpandedChange = { expanded = it },
-                    title = "search something...",
-                    searchFieldHint = "input keyword",
-                    searchFieldState = rememberTextFieldState(),
-                    searchBarOffsetY = { searchBarOffsetY },
-                    trailingIcon = {
-                        IconButton(onClick = { menuExpanded = true }) {
-                            Icon(
-                                Icons.Default.MoreVert,
-                                contentDescription = null
-                            )
-                        }
-                    },
-                    filter = {
-                        val tagSet = itemState.flatMap { game ->
-                            game.filterTags
-                        }.toSet()
-                        Filter(tagSet, selectedTags) { tag, selected ->
-                            selectedTags = if (selected) {
-                                selectedTags.plus(tag)
-                            } else {
-                                selectedTags.minus(tag)
-                            }
-                        }
-                    },
-                    //floatingActionButton = TODO()
-                ) { contentPadding ->
-                    val density = LocalDensity.current
-                    val searchBarConnection = remember {
-                        val topPaddingPx =
-                            with(density) { contentPadding.calculateTopPadding().roundToPx() }
-                        object : NestedScrollConnection {
-                            override fun onPostScroll(
-                                consumed: Offset,
-                                available: Offset,
-                                source: NestedScrollSource
-                            ): Offset {
-                                val dy = -consumed.y
-
-                                searchBarOffsetY =
-                                    (searchBarOffsetY - dy).roundToInt().coerceIn(-topPaddingPx, 0)
-                                return Offset.Zero // We never consume it
-                            }
-                        }
-                    }
-
-
-
-                    LazyColumn(
-                        contentPadding = contentPadding,
-                        state = listState,
-                        modifier = Modifier.nestedScroll(searchBarConnection),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-
-
-                        val itemModifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                        val filterItems = itemState.filter {
-                            it.filterTags.containsAll(filterState.tags) && it.name.contains(
-                                filterState.keyword,
-                                ignoreCase = true
-                            )
-                        }
-
-                        itemsIndexed(filterItems, key = { index, item -> index }) { index, item ->
-                            val scope = rememberCoroutineScope()
-                            val id = item.url.getId()
-                            with(sharedTransitionScope) {
-                                LibraryItem(
-                                    gameBasic = item,
-                                    modifier = itemModifier,
-                                    onClick = {
-                                        viewModel.send(LibraryIntent.ClickItem(item.url){ navigator.navigateTo(ListDetailPaneScaffoldRole.Detail, item.url) })
-
-                                    },
-                                    onLongClick = { showBottomSheetWithUrl = item.url },
-                                    imageModifier = Modifier
-//                                        .sharedElement(
-//                                            sharedTransitionScope.rememberSharedContentState(key = "image-$id"),
-//                                            animatedVisibilityScope = animatedContentScope
-//                                        )
-                                        //.size(100.dp)
-                                        .sizeIn(maxHeight = 80.dp)
-                                        .aspectRatio(315f / 250f)
-                                        .clip(RoundedCornerShape(8.dp)),
-//                                    textModifier = Modifier.sharedElement(
-//                                        sharedTransitionScope.rememberSharedContentState(key = "text-$id"),
-//                                        animatedVisibilityScope = animatedContentScope,
-//                                    ),
-                                    showStar = SortType.Starred in state.sortTypes
-//                        image = ImageRequest.Builder(LocalContext.current)
-//                            .data(item.image)
-//                            .crossfade(true)
-//                            .placeholderMemoryCacheKey("image-$id")
-//                            .memoryCacheKey("image-$id")
-//                            .build()
-                                )
-                            }
-                        }
-
-                    }
-                }
-            }
-        },
-        detailPane = {
-            AnimatedPane {
-                // Show the detail pane content if selected item is available
-                navigator.currentDestination?.content?.let {
-                    Log.i("Lib",it)
-                    DetailScreen(
-                        url = it,
-                        viewModel = viewModel
-                    )
-                }
-            }
-        },
-    )
-
-
-
-
-
-
-    LibraryBottomSheet(
-        showBottomSheetWithUrl,
-        onDismiss = { showBottomSheetWithUrl = null },
-        onRemove = { viewModel.send(LibraryIntent.Remove(showBottomSheetWithUrl!!){ if(navigator.currentDestination != null && navigator.currentDestination?.pane == ListDetailPaneScaffoldRole.Detail) navigator.navigateBack() }) },
-        onStar = { viewModel.send(LibraryIntent.Star(showBottomSheetWithUrl!!)) },
-        onMark = { viewModel.send(LibraryIntent.Mark(showBottomSheetWithUrl!!)) }
-    )
-
     @Composable
     fun DropMenu(menuExpanded: Boolean, onDismiss: () -> Unit = {}) {
         Box(
@@ -546,7 +382,184 @@ fun LibraryScreen(
         }
     }
 
-    DropMenu(menuExpanded, onDismiss = { menuExpanded = false })
+    Column(modifier = Modifier.fillMaxSize()) {
+        if (state.loading) {
+            if (state.progress != null) {
+                val animatedProgress by
+                animateFloatAsState(
+                    targetValue = state.progress!!,
+                    animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
+                )
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth(),
+                    progress = { animatedProgress },
+                )
+            } else {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+
+        }
+        ListDetailPaneScaffold(
+            directive = navigator.scaffoldDirective,
+            value = navigator.scaffoldValue,
+            listPane = {
+                AnimatedPane {
+                    DropMenu(menuExpanded, onDismiss = { menuExpanded = false })
+                    SearchLayout(
+                        onApplySearch = { query ->
+                            viewModel.send(
+                                LibraryIntent.UpdateFilter(
+                                    query,
+                                    selectedTags
+                                )
+                            )
+                        },
+                        expanded = expanded,
+                        onExpandedChange = { expanded = it },
+                        title = "search something...",
+                        searchFieldHint = "input keyword",
+                        searchFieldState = rememberTextFieldState(),
+                        searchBarOffsetY = { searchBarOffsetY },
+                        trailingIcon = {
+                            IconButton(onClick = { menuExpanded = true }) {
+                                Icon(
+                                    Icons.Default.MoreVert,
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        filter = {
+                            val tagSet = itemState.flatMap { game ->
+                                game.filterTags
+                            }.toSet()
+                            Filter(tagSet, selectedTags) { tag, selected ->
+                                selectedTags = if (selected) {
+                                    selectedTags.plus(tag)
+                                } else {
+                                    selectedTags.minus(tag)
+                                }
+                            }
+                        },
+                        //floatingActionButton = TODO()
+                    ) { contentPadding ->
+                        val density = LocalDensity.current
+                        val searchBarConnection = remember {
+                            val topPaddingPx =
+                                with(density) { contentPadding.calculateTopPadding().roundToPx() }
+                            object : NestedScrollConnection {
+                                override fun onPostScroll(
+                                    consumed: Offset,
+                                    available: Offset,
+                                    source: NestedScrollSource
+                                ): Offset {
+                                    val dy = -consumed.y
+
+                                    searchBarOffsetY =
+                                        (searchBarOffsetY - dy).roundToInt()
+                                            .coerceIn(-topPaddingPx, 0)
+                                    return Offset.Zero // We never consume it
+                                }
+                            }
+                        }
+
+
+
+                        LazyColumn(
+                            contentPadding = contentPadding,
+                            state = listState,
+                            modifier = Modifier.nestedScroll(searchBarConnection),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+
+
+                            val itemModifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                            val filterItems = itemState.filter {
+                                it.filterTags.containsAll(filterState.tags) && it.name.contains(
+                                    filterState.keyword,
+                                    ignoreCase = true
+                                )
+                            }
+
+                            itemsIndexed(
+                                filterItems,
+                                key = { index, item -> index }) { index, item ->
+                                val scope = rememberCoroutineScope()
+                                val id = item.url.getId()
+                                with(sharedTransitionScope) {
+                                    LibraryItem(
+                                        gameBasic = item,
+                                        modifier = itemModifier,
+                                        onClick = {
+                                            viewModel.send(LibraryIntent.ClickItem(item.url) {
+                                                navigator.navigateTo(
+                                                    ListDetailPaneScaffoldRole.Detail,
+                                                    item.url
+                                                )
+                                            })
+
+                                        },
+                                        onLongClick = { showBottomSheetWithUrl = item.url },
+                                        imageModifier = Modifier
+//                                        .sharedElement(
+//                                            sharedTransitionScope.rememberSharedContentState(key = "image-$id"),
+//                                            animatedVisibilityScope = animatedContentScope
+//                                        )
+                                            //.size(100.dp)
+                                            .sizeIn(maxHeight = 80.dp)
+                                            .aspectRatio(315f / 250f)
+                                            .clip(RoundedCornerShape(8.dp)),
+//                                    textModifier = Modifier.sharedElement(
+//                                        sharedTransitionScope.rememberSharedContentState(key = "text-$id"),
+//                                        animatedVisibilityScope = animatedContentScope,
+//                                    ),
+                                        showStar = SortType.Starred in state.sortTypes
+//                        image = ImageRequest.Builder(LocalContext.current)
+//                            .data(item.image)
+//                            .crossfade(true)
+//                            .placeholderMemoryCacheKey("image-$id")
+//                            .memoryCacheKey("image-$id")
+//                            .build()
+                                    )
+                                }
+                            }
+
+                        }
+                    }
+                }
+            },
+            detailPane = {
+                AnimatedPane {
+                    // Show the detail pane content if selected item is available
+                    navigator.currentDestination?.content?.let {
+                        Log.i("Lib", it)
+                        DetailScreen(
+                            url = it,
+                            viewModel = viewModel
+                        )
+                    }
+                }
+            },
+        )
+    }
+
+
+
+
+
+
+    LibraryBottomSheet(
+        showBottomSheetWithUrl,
+        onDismiss = { showBottomSheetWithUrl = null },
+        onRemove = { viewModel.send(LibraryIntent.Remove(showBottomSheetWithUrl!!){ if(navigator.currentDestination != null && navigator.currentDestination?.pane == ListDetailPaneScaffoldRole.Detail) navigator.navigateBack() }) },
+        onStar = { viewModel.send(LibraryIntent.Star(showBottomSheetWithUrl!!)) },
+        onMark = { viewModel.send(LibraryIntent.Mark(showBottomSheetWithUrl!!)) }
+    )
+
+
+
+
 }
 
 
