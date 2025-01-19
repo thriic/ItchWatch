@@ -6,19 +6,14 @@ import androidx.lifecycle.viewModelScope
 import com.thriic.core.model.GameBasic
 import com.thriic.core.model.Tag
 import com.thriic.core.repository.GameRepository
-import com.thriic.itchwatch.ui.Navigator
-import com.thriic.itchwatch.ui.utils.cleanUrl
-import com.thriic.itchwatch.ui.utils.encodeUrl
-import com.thriic.itchwatch.ui.utils.isGamePageUrl
+import com.thriic.itchwatch.Navigator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import javax.inject.Inject
-import javax.inject.Singleton
 
 
 @HiltViewModel

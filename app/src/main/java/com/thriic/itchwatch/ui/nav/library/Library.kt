@@ -100,8 +100,8 @@ import com.thriic.itchwatch.ui.common.GameInfoItem
 import com.thriic.itchwatch.ui.common.PlatformRow
 import com.thriic.itchwatch.ui.common.SearchLayout
 import com.thriic.itchwatch.ui.detail.DetailScreen
-import com.thriic.itchwatch.ui.utils.WatchLayout
-import com.thriic.itchwatch.ui.utils.getId
+import com.thriic.itchwatch.utils.WatchLayout
+import com.thriic.itchwatch.utils.getId
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import kotlin.math.roundToInt

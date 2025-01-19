@@ -1,4 +1,4 @@
-package com.thriic.itchwatch.ui
+package com.thriic.itchwatch
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -10,7 +10,6 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -19,11 +18,9 @@ import androidx.navigation.navArgument
 import androidx.window.core.layout.WindowSizeClass
 import androidx.window.core.layout.WindowWidthSizeClass
 import com.thriic.itchwatch.ui.theme.ItchWatchTheme
-import com.thriic.itchwatch.ui.detail.DetailScreen
-import com.thriic.itchwatch.ui.detail.DetailViewModel
 import com.thriic.itchwatch.ui.nav.AppNavHost
-import com.thriic.itchwatch.ui.utils.DevicePreviews
-import com.thriic.itchwatch.ui.utils.WatchLayout
+import com.thriic.itchwatch.utils.DevicePreviews
+import com.thriic.itchwatch.utils.WatchLayout
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 

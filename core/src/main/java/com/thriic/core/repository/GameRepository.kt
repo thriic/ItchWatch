@@ -81,7 +81,7 @@ class GameRepository @Inject constructor(
         }.buffer(5)
 
     //import games
-    fun addGames(urls: Set<String>): Flow<Result<GameBasic>> = channelFlow {
+    fun addGames(urls: Set<String>, withLocalInfo: Boolean = false): Flow<Result<GameBasic>> = channelFlow {
         flow {
             for (url in urls) {
                 Log.i("GameRepository", url)
@@ -90,7 +90,7 @@ class GameRepository @Inject constructor(
         }
             .map { url ->
                 async(Dispatchers.IO) {
-                    addGameAndEmit(url) { this@channelFlow.send(it) }
+                    addGameAndEmit(url,withLocalInfo = withLocalInfo) { this@channelFlow.send(it) }
                 }
             }
             .buffer(8)
@@ -133,6 +133,7 @@ class GameRepository @Inject constructor(
     private suspend fun addGameAndEmit(
         url: String,
         blurb : String? = null,
+        withLocalInfo:Boolean = false,
         emit: suspend (Result<GameBasic>) -> Unit
     ): Result<GameBasic>? {
         if (latestGames.any { it.url == url }) {
@@ -146,8 +147,19 @@ class GameRepository @Inject constructor(
             latestGames.add(gameFull)//add to member variable
             gameLocalDataSource.insertGames(gameFull)//insert to database
             //always init localInfo when add a new game
-            val localInfo = LocalInfo(url, blurb = blurb, lastPlayedVersion = null, lastPlayedTime = null, starred = false)
-            gameLocalDataSource.insertLocalInfo(localInfo)
+            val localInfo: LocalInfo
+            if(withLocalInfo) {
+                localInfo = getLocalInfo(url)
+            }else{
+                localInfo = LocalInfo(
+                    url,
+                    blurb = blurb,
+                    lastPlayedVersion = null,
+                    lastPlayedTime = null,
+                    starred = false
+                )
+                gameLocalDataSource.insertLocalInfo(localInfo)
+            }
             Log.i("GameRepository", "added localInfo with $blurb")
             return Result.success(gameFull.toBasic(localInfo))
         } catch (e: Exception) {
@@ -192,6 +204,10 @@ class GameRepository @Inject constructor(
     suspend fun getLocalInfo(url: String):LocalInfo{
         //logically,it wont be null
         return gameLocalDataSource.getLocalInfo(url)!!
+    }
+
+    suspend fun getAllLocalInfo():List<LocalInfo>{
+        return gameLocalDataSource.getAllLocalInfo()
     }
 
     suspend fun updateLocalInfo(url:String, blurb:String? = null, lastPlayedVersion:String? = null, lastPlayedTime: LocalDateTime? = null, starred:Boolean? = null): LocalInfo {

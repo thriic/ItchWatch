@@ -23,8 +23,9 @@ import com.thriic.itchwatch.ui.nav.explore.ExploreScreen
 import com.thriic.itchwatch.ui.nav.explore.ExploreViewModel
 import com.thriic.itchwatch.ui.nav.library.LibraryScreen
 import com.thriic.itchwatch.ui.nav.library.LibraryViewModel
+import com.thriic.itchwatch.ui.nav.settings.SettingsViewModel
 import com.thriic.itchwatch.ui.nav.settings.SettingsScreen
-import com.thriic.itchwatch.ui.utils.WatchLayout
+import com.thriic.itchwatch.utils.WatchLayout
 
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -61,7 +62,7 @@ fun AppNavHost(
             AppDestinations.EXPLORE -> ExploreScreen(layout, viewModel = hiltViewModel<ExploreViewModel>(), sharedTransitionScope = sharedTransitionScope, animatedContentScope =  animatedContentScope)
             AppDestinations.LIBRARY -> LibraryScreen(layout,viewModel = hiltViewModel<LibraryViewModel>(), sharedTransitionScope = sharedTransitionScope, animatedContentScope =  animatedContentScope)
             AppDestinations.IMPORT -> Import(layout,viewModel = hiltViewModel<ImportViewModel>())
-            AppDestinations.PROFILE -> {}
+            AppDestinations.Settings -> SettingsScreen(viewModel = hiltViewModel<SettingsViewModel>())
         }
     }
 }
@@ -73,5 +74,5 @@ enum class AppDestinations(
     EXPLORE("Explore", R.drawable.search),
     LIBRARY("My Lib", R.drawable.library),
     IMPORT("Import", R.drawable.import_24px),
-    PROFILE("Settings", R.drawable.settings),
+    Settings("Settings", R.drawable.settings),
 }

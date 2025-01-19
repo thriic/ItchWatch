@@ -37,6 +37,10 @@ class GameLocalDataSource @Inject constructor(private val gameDao: GameDao, priv
         }
     }
 
+    suspend fun getAllLocalInfo() = withContext(Dispatchers.IO) {
+        infoDao.getAll()
+    }
+
     suspend fun getLocalInfo(url:String) =
         withContext(Dispatchers.IO) {
             infoDao.queryInfo(url)

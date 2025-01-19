@@ -1,4 +1,4 @@
-package com.thriic.itchwatch.ui.utils
+package com.thriic.itchwatch.utils
 
 enum class WatchLayout(val num:Int) {
     Compact(1),

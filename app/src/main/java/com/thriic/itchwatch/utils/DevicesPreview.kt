@@ -1,4 +1,4 @@
-package com.thriic.itchwatch.ui.utils
+package com.thriic.itchwatch.utils
 
 import androidx.compose.ui.tooling.preview.Preview
 

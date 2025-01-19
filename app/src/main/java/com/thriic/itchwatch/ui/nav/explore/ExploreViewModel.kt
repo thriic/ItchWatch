@@ -4,12 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thriic.core.repository.GameRepository
 import com.thriic.core.repository.SearchRepository
-import com.thriic.itchwatch.ui.Navigator
-import com.thriic.itchwatch.ui.utils.encodeUrl
+import com.thriic.itchwatch.Navigator
+import com.thriic.itchwatch.utils.encodeUrl
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 

@@ -1,4 +1,4 @@
-package com.thriic.itchwatch.ui.utils
+package com.thriic.itchwatch.utils
 
 import android.content.Context
 import java.io.BufferedReader

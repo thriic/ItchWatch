@@ -3,14 +3,11 @@ package com.thriic.itchwatch.ui.nav.imports
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.thriic.core.model.GameBasic
-import com.thriic.core.model.Tag
 import com.thriic.core.repository.CollectionRepository
 import com.thriic.core.repository.GameRepository
-import com.thriic.itchwatch.ui.Navigator
-import com.thriic.itchwatch.ui.nav.library.SortType
-import com.thriic.itchwatch.ui.utils.cleanUrl
-import com.thriic.itchwatch.ui.utils.encodeUrl
+import com.thriic.itchwatch.Navigator
+import com.thriic.itchwatch.utils.cleanUrl
+import com.thriic.itchwatch.utils.encodeUrl
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,10 +25,10 @@ class ImportViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(
         ImportState(
-        null,
-        loading = false,
-        progressText = ""
-    )
+            null,
+            loading = false,
+            progressText = ""
+        )
     )
     val state: StateFlow<ImportState>
         get() = _uiState
@@ -45,7 +42,7 @@ class ImportViewModel @Inject constructor(
         }
     }
 
-    suspend fun clearProgress(){
+    suspend fun clearProgress() {
         update(_uiState.value.copy(loading = false, progress = null, progressText = ""))
     }
 
@@ -86,7 +83,12 @@ class ImportViewModel @Inject constructor(
                         val size = set.size
                         var index = 0
                         var successIndex = 0
-                        update(_uiState.value.copy(loading = true, progressText = "trying $size links from the file"))
+                        update(
+                            _uiState.value.copy(
+                                loading = true,
+                                progressText = "trying $size links from the file"
+                            )
+                        )
                         sendMessage("try $size")
                         repository.addGames(urls = set).collect { result ->
                             index += 1
@@ -94,7 +96,12 @@ class ImportViewModel @Inject constructor(
                             if (result.isSuccess) {
                                 successIndex += 1
                             }
-                            if (size >= 5) update(_uiState.value.copy(progress = index / size.toFloat(), progressText = "fetching..."))
+                            if (size >= 5) update(
+                                _uiState.value.copy(
+                                    progress = index / size.toFloat(),
+                                    progressText = "fetching..."
+                                )
+                            )
                             if (index >= size) {
                                 clearProgress()
                                 sendMessage("added $successIndex/$size")
@@ -104,6 +111,39 @@ class ImportViewModel @Inject constructor(
                 } else {
                     sendMessage("empty text")
                     update(_uiState.value.copy(loading = false, progress = null))
+                }
+            }
+
+            ImportIntent.AddGamesFromLocal -> {
+                update(_uiState.value.copy(loading = true))
+                val set = repository.getAllLocalInfo().map { it.url }.toSet()
+                Log.i("Lib ViewModel", "AddGames: $set")
+                if (set.isEmpty()) {
+                    sendMessage("no valid url")
+                    update(_uiState.value.copy(loading = false, progress = null))
+                } else {
+                    val size = set.size
+                    var index = 0
+                    var successIndex = 0
+                    update(_uiState.value.copy(loading = true, progressText = "trying $size local data"))
+                    sendMessage("try $size")
+                    repository.addGames(urls = set, withLocalInfo = true).collect { result ->
+                        index += 1
+                        Log.i("Lib ViewModel", "add $result")
+                        if (result.isSuccess) {
+                            successIndex += 1
+                        }
+                        if (size >= 5) update(
+                            _uiState.value.copy(
+                                progress = index / size.toFloat(),
+                                progressText = "fetching..."
+                            )
+                        )
+                        if (index >= size) {
+                            clearProgress()
+                            sendMessage("added $successIndex/$size")
+                        }
+                    }
                 }
             }
 
@@ -118,14 +158,24 @@ class ImportViewModel @Inject constructor(
                         val size = collection.gameCells.size
                         var index = 0
                         var successIndex = 0
-                        update(_uiState.value.copy(loading = true, progressText = "fetching $size games from ${collection.title}"))
+                        update(
+                            _uiState.value.copy(
+                                loading = true,
+                                progressText = "fetching $size games from ${collection.title}"
+                            )
+                        )
                         repository.addGames(collection.gameCells).collect { result ->
                             index += 1
                             Log.i("Lib ViewModel", "add $result")
                             if (result.isSuccess) {
                                 successIndex += 1
                             }
-                            if (size >= 5) update(_uiState.value.copy(progress = index / size.toFloat(), progressText = "fetching ${collection.gameCells[index-1].name}"))
+                            if (size >= 5) update(
+                                _uiState.value.copy(
+                                    progress = index / size.toFloat(),
+                                    progressText = "fetching ${collection.gameCells[index - 1].name}"
+                                )
+                            )
                             if (index >= size) {
                                 clearProgress()
                                 sendMessage("added $successIndex/$size")
@@ -140,11 +190,12 @@ class ImportViewModel @Inject constructor(
     }
 }
 
-data class ImportState(val progress: Float? = null, val loading:Boolean, val progressText:String)
+data class ImportState(val progress: Float? = null, val loading: Boolean, val progressText: String)
 
 sealed interface ImportIntent {
     data class AddGame(val url: String) : ImportIntent
     data class AddGames(val text: String) : ImportIntent
+    data object AddGamesFromLocal : ImportIntent
     data class FetchCollection(val url: String) : ImportIntent
     data object Finish : ImportIntent
 }

@@ -66,9 +66,9 @@ import com.thriic.itchwatch.R
 import com.thriic.itchwatch.ui.common.PlatformIcon
 import com.thriic.itchwatch.ui.nav.library.LibraryIntent
 import com.thriic.itchwatch.ui.nav.library.LibraryViewModel
-import com.thriic.itchwatch.ui.utils.Href
-import com.thriic.itchwatch.ui.utils.getHref
-import com.thriic.itchwatch.ui.utils.phraseSocialUrl
+import com.thriic.itchwatch.utils.Href
+import com.thriic.itchwatch.utils.getHref
+import com.thriic.itchwatch.utils.phraseSocialUrl
 
 
 @OptIn(ExperimentalSharedTransitionApi::class)

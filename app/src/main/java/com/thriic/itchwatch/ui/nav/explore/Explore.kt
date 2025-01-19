@@ -69,8 +69,8 @@ import com.thriic.core.model.Platform
 import com.thriic.core.network.model.SearchResult
 import com.thriic.itchwatch.ui.common.GameInfoItem
 import com.thriic.itchwatch.ui.common.PlatformRow
-import com.thriic.itchwatch.ui.utils.WatchLayout
-import com.thriic.itchwatch.ui.utils.getId
+import com.thriic.itchwatch.utils.WatchLayout
+import com.thriic.itchwatch.utils.getId
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable

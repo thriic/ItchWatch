@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavBackStackEntry
 import com.thriic.core.repository.GameRepository
-import com.thriic.itchwatch.ui.utils.decodeUrl
+import com.thriic.itchwatch.utils.decodeUrl
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject

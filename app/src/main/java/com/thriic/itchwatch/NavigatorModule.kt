@@ -1,4 +1,4 @@
-package com.thriic.itchwatch.ui
+package com.thriic.itchwatch
 
 import dagger.Module
 import dagger.Provides
