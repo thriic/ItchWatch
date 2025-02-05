@@ -3,8 +3,10 @@ package com.thriic.itchwatch.ui.nav.library
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.thriic.core.local.UserPreferences
 import com.thriic.core.model.GameBasic
 import com.thriic.core.model.FilterTag
+import com.thriic.core.model.SortType
 import com.thriic.core.repository.GameRepository
 import com.thriic.itchwatch.Navigator
 import com.thriic.itchwatch.ui.detail.DetailState
@@ -20,7 +22,7 @@ import javax.inject.Inject
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     private val repository: GameRepository,
-    private val navigator: Navigator
+    private val userPreferences: UserPreferences
 ) : ViewModel() {
     private val _items = MutableStateFlow<List<GameBasic>>(emptyList())
     val items: StateFlow<List<GameBasic>> = _items
@@ -161,6 +163,7 @@ class LibraryViewModel @Inject constructor(
                     }
                 }
                 update(_uiState.value.copy(sortTypes = newSet))
+                userPreferences.saveSortTypes(newSet)
                 sort()
             }
 
@@ -277,6 +280,9 @@ class LibraryViewModel @Inject constructor(
                 if (result.isSuccess)
                     _items.value += result.getOrThrow()
             }
+            userPreferences.sortTypesFlow.collect {
+                update(_uiState.value.copy(sortTypes = it))
+            }
         }
     }
 }
@@ -292,12 +298,4 @@ sealed interface LibraryIntent {
     data class Sort(val sortType: SortType) : LibraryIntent
     data class UpdateFilter(val keyword:String?, val filterTags: Set<FilterTag>?): LibraryIntent
     data object SyncRepository : LibraryIntent
-}
-
-enum class SortType {
-    Name,
-    Time,
-    TimeReverse,
-    Starred,
-    Updated
 }

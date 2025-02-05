@@ -2,6 +2,7 @@ package com.thriic.itchwatch.ui.nav.explore
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.thriic.core.local.UserPreferences
 import com.thriic.core.model.SearchSortType
 import com.thriic.core.model.SearchTag
 import com.thriic.core.repository.GameRepository
@@ -17,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ExploreViewModel @Inject constructor(
     private val searchRepository: SearchRepository,
-    private val gameRepository: GameRepository
+    private val gameRepository: GameRepository,
+    private val userPreferences: UserPreferences,
 ): ViewModel() {
 
     private val _uiState = MutableStateFlow(ExploreUiState(
@@ -38,6 +40,16 @@ class ExploreViewModel @Inject constructor(
             _toastMessage.emit(message)
         }
     }
+
+    init {
+        //load user preferences
+        viewModelScope.launch {
+            userPreferences.searchSortTypeFlow.collect {
+                update(_uiState.value.copy(sortType = it))
+            }
+        }
+    }
+
     private suspend fun update(uiState: ExploreUiState) = _uiState.emit(uiState)
     fun send(intent: ExploreIntent) = viewModelScope.launch { onHandle(intent) }
     private suspend fun onHandle(intent: ExploreIntent) {
@@ -59,7 +71,12 @@ class ExploreViewModel @Inject constructor(
             }
             is ExploreIntent.SearchByTag -> {
                 if(!_uiState.value.searchLoading) {
-                    update(_uiState.value.copy(searchLoading = true, sortType = intent.sortType?:state.value.sortType))
+                    update(_uiState.value.copy(searchLoading = true))
+                    //when change search sort type
+                    if(intent.sortType!=null && state.value.sortType != intent.sortType) {
+                        update(_uiState.value.copy(sortType = intent.sortType))
+                        userPreferences.saveSearchSortType(intent.sortType)//save to preferences
+                    }
                     searchRepository.fetchTagSearch(
                         tags = intent.tags,
                         sortType = state.value.sortType

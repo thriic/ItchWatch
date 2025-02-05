@@ -93,6 +93,7 @@ import com.thriic.core.model.GameBasic
 import com.thriic.core.model.LocalInfo
 import com.thriic.core.model.Platform
 import com.thriic.core.model.FilterTag
+import com.thriic.core.model.SortType
 import com.thriic.core.model.TagType
 import com.thriic.core.network.model.DevLogItem
 import com.thriic.itchwatch.R

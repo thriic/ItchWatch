@@ -33,3 +33,12 @@ fun List<FilterTag>.filter(vararg types: TagType): List<FilterTag> {
 enum class TagType {
     Status, Platform, Author, MadeWith, NormalTag, Duration, Language, Input, Category, Genre, Link
 }
+
+
+enum class SortType {
+    Name,
+    Time,
+    TimeReverse,
+    Starred,
+    Updated
+}

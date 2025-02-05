@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thriic.core.local.GameLocalDataSource
 import com.thriic.core.local.TagLocalDataSource
+import com.thriic.core.local.UserPreferences
 import com.thriic.core.model.LocalInfo
 import com.thriic.core.network.SearchRemoteDataSource
 import com.thriic.core.repository.SearchRepository
@@ -20,6 +21,7 @@ class SettingsViewModel @Inject constructor(
     private val gameLocalDataSource: GameLocalDataSource,
     private val searchRemoteDataSource: SearchRemoteDataSource,
     private val tagLocalDataSource: TagLocalDataSource,
+    private val userPreferences: UserPreferences
 ) : ViewModel() {
     private val _uiState =
         MutableStateFlow(
