@@ -16,8 +16,8 @@ data class SearchResult(
     /**
      * game link https://xxx.itch.io/xxx
      */
-    val gameLink: String,
-    val title: String,
+    val url: String,
+    val name: String,
     val image: String?,
     /**
      * only author name, not a link
@@ -64,14 +64,22 @@ fun Document.toSearchApiModel(): SearchApiModel {
             val ratingCount = ratingHtml.selectFirst("span.rating_count")!!.text().substringAfter("(").substringBefore("total").replace(",","").trim()
             rating = Rating("%.1f".format(ratingValue * 5 / 100), ratingCount.toInt(),ratingValue)
         }
+
+        val price = gameData.selectFirst("div.price_value")?.text()
+        val saleTag = gameData.selectFirst("div.sale_tag")?.text()
+        val priceText = when {
+            price == null -> null
+            saleTag == null -> price
+            else -> "$price($saleTag)"
+        }
         SearchResult(
-            gameLink = gameThumb.attr("href"),
-            title = gameData.selectFirst("a.title.game_link")!!.text(),
+            url = gameThumb.attr("href"),
+            name = gameData.selectFirst("a.title.game_link")!!.text(),
             description = gameData.selectFirst("div.game_text")?.text(),
             image = gameThumb.selectFirst("img.lazy_loaded")?.attr("data-lazy_src"),
             author = author.selectFirst("a[data-action=game_grid]")!!.text(),
             verifiedAuthor = author.selectFirst("svg.svgicon.icon_verified") != null,
-            price = gameData.selectFirst("div.price_value")?.text(),
+            price = priceText,
             genre = gameData.selectFirst("div.game_genre")?.text(),
             rating = rating,
             platforms = platforms

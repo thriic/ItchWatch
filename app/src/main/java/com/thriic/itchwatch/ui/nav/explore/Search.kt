@@ -4,6 +4,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -12,21 +13,27 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
@@ -36,7 +43,9 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -45,6 +54,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -65,12 +75,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.vectorResource
@@ -78,10 +90,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.thriic.core.formatTimeDifference
 import com.thriic.core.model.SearchSortType
 import com.thriic.core.model.SearchTag
 import com.thriic.core.model.containsTag
+import com.thriic.core.network.model.SearchResult
 import com.thriic.itchwatch.R
+import com.thriic.itchwatch.ui.common.GameInfoItem
+import com.thriic.itchwatch.ui.common.PlatformRow
 import com.thriic.itchwatch.ui.common.SearchLayout
 import com.thriic.itchwatch.ui.detail.DetailScreen
 import kotlin.math.roundToInt
@@ -129,7 +146,7 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                 DropdownMenuItem(
                     text = { Text("Popular") },
                     onClick = {
-
+                        viewModel.send(ExploreIntent.Sort(SearchSortType.Popular))
                     },
                     trailingIcon = {
                         if (state.sortType == SearchSortType.Popular) Icon(
@@ -142,7 +159,7 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                 DropdownMenuItem(
                     text = { Text("Top Rated") },
                     onClick = {
-
+                        viewModel.send(ExploreIntent.Sort(SearchSortType.TopRated))
                     },
                     trailingIcon = {
                         if (state.sortType == SearchSortType.TopRated) Icon(
@@ -154,7 +171,7 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                 DropdownMenuItem(
                     text = { Text("Most Recent") },
                     onClick = {
-
+                        viewModel.send(ExploreIntent.Sort(SearchSortType.MostRecent))
                     },
                     trailingIcon = {
                         if (state.sortType == SearchSortType.MostRecent) Icon(
@@ -166,7 +183,7 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                 DropdownMenuItem(
                     text = { Text("Top Sellers") },
                     onClick = {
-
+                        viewModel.send(ExploreIntent.Sort(SearchSortType.TopSellers))
                     },
                     trailingIcon = {
                         if (state.sortType == SearchSortType.TopSellers) Icon(
@@ -175,32 +192,31 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                         )
                     }
                 )
-                HorizontalDivider()
-                DropdownMenuItem(
-                    text = { Text("Sort") },
-                    onClick = {
-
-                    },
-                    trailingIcon = {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.sort),
-                            contentDescription = null
-                        )
-                    }
-                )
-                val coroutineScope = rememberCoroutineScope()
-                DropdownMenuItem(
-                    text = { Text("Refresh") },
-                    onClick = {
-
-                    },
-                    trailingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.Refresh,
-                            contentDescription = null
-                        )
-                    }
-                )
+//                HorizontalDivider()
+//                DropdownMenuItem(
+//                    text = { Text("Sort") },
+//                    onClick = {
+//
+//                    },
+//                    trailingIcon = {
+//                        Icon(
+//                            imageVector = ImageVector.vectorResource(R.drawable.sort),
+//                            contentDescription = null
+//                        )
+//                    }
+//                )
+//                DropdownMenuItem(
+//                    text = { Text("Refresh") },
+//                    onClick = {
+//
+//                    },
+//                    trailingIcon = {
+//                        Icon(
+//                            imageVector = Icons.Filled.Refresh,
+//                            contentDescription = null
+//                        )
+//                    }
+//                )
             }
         }
     }
@@ -329,7 +345,11 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                         }
 
                         if (state.searchLoading) {
-                            Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
                                 CircularProgressIndicator()
                             }
                         } else {
@@ -345,23 +365,29 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp)
 
+                                val imageModifier = Modifier
+                                    .sizeIn(maxHeight = 80.dp)
+                                    .aspectRatio(315f / 250f)
+                                    .clip(RoundedCornerShape(8.dp))
+
                                 itemsIndexed(
                                     state.searchApiModel?.items ?: listOf(),
                                     key = { index, _ -> index }) { _, item ->
                                     SearchItem(
-                                        item,
-                                        itemModifier
+                                        searchItem = item,
+                                        modifier = itemModifier
                                             .clickable {
                                                 viewModel.send(
-                                                    ExploreIntent.ClickItem(item.gameLink) {
+                                                    ExploreIntent.ClickItem(item.url) {
                                                         navigator.navigateTo(
                                                             ListDetailPaneScaffoldRole.Detail,
-                                                            item.gameLink
+                                                            item.url
                                                         )
-                                                    })
-
-                                            }
-                                            .padding(16.dp)
+                                                    }
+                                                )
+                                            },
+                                        imageModifier = imageModifier,
+                                        sortType = state.sortType
                                     )
 
                                 }
@@ -394,6 +420,94 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
     }
 
 
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun SearchItem(
+    searchItem: SearchResult,
+    modifier: Modifier = Modifier,
+    imageModifier: Modifier = Modifier,
+    sortType: SearchSortType
+) {
+    Card(
+        modifier = modifier
+            .heightIn(min = 120.dp),
+        //onClick = onClick
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.Start,
+            ) {
+                if (searchItem.image != null) {
+                    AsyncImage(
+                        model = searchItem.image,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = imageModifier,
+                    )
+                }
+
+
+                GameInfoItem(
+                    modifier = Modifier.padding(start = 16.dp),
+                    title = searchItem.name,
+                    description = searchItem.description,
+                )
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp)
+            ) {
+                PlatformRow(searchItem.platforms)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    val content =
+                        if (sortType == SearchSortType.TopRated)
+                            "%.2f".format(searchItem.rating!!.ratingPercent!! * 5 / 100) + "(${searchItem.rating!!.ratingCount})"
+                        else if (sortType == SearchSortType.TopSellers) {
+                            searchItem.price
+                        } else {
+                            searchItem.genre
+                        }
+                    if (content != null) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(90.dp))
+                                .background(MaterialTheme.colorScheme.inverseOnSurface)
+                                .padding(8.dp)
+                        ) {
+                            Text(content, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+//                    if (gameBasic.localInfo.starred && showStar) {
+//                        Box(
+//                            modifier = Modifier
+//                                .clip(RoundedCornerShape(90.dp))
+//                                .background(MaterialTheme.colorScheme.inverseOnSurface)
+//                                .padding(8.dp)
+//                        ) {
+//                            Icon(
+//                                imageVector = Icons.Default.Star,
+//                                contentDescription = null,
+//                                modifier = Modifier.size(16.dp)
+//                            )
+//                        }
+//                    }
+                }
+            }
+        }
+
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)

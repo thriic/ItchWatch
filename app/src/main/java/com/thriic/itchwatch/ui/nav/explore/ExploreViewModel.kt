@@ -72,11 +72,27 @@ class ExploreViewModel @Inject constructor(
             }
 
             is ExploreIntent.Star -> {
-                addLocalGame(intent.url)
-                val localInfo = gameRepository.getLocalInfo(intent.url)
-                val updatedLocalInfo = gameRepository.updateLocalInfo(url = intent.url, starred = !localInfo.starred)
-                if(_detailState.value.game?.url == intent.url) _detailState.value = _detailState.value.copy(localInfo = updatedLocalInfo)
-                sendMessage(if(localInfo.starred) "unstarred" else "starred")
+                try {
+                    if(gameRepository.existLocalGame(intent.url)){
+                        val localInfo = gameRepository.getLocalInfo(intent.url)
+                        val updatedLocalInfo = gameRepository.updateLocalInfo(url = intent.url, starred = !localInfo.starred)
+                        if(_detailState.value.game?.url == intent.url) _detailState.value = _detailState.value.copy(localInfo = updatedLocalInfo)
+                        sendMessage(if(localInfo.starred) "unstarred" else "starred")
+                    }else{
+                        gameRepository.addGameByUrl(intent.url).collect { result ->
+                            result
+                                .onSuccess {
+                                    val localInfo = gameRepository.getLocalInfo(intent.url)
+                                    val updatedLocalInfo = gameRepository.updateLocalInfo(url = intent.url, starred = !localInfo.starred)
+                                    if(_detailState.value.game?.url == intent.url) _detailState.value = _detailState.value.copy(localInfo = updatedLocalInfo)
+                                    sendMessage(if(localInfo.starred) "unstarred" else "starred")
+                                }
+                                .onFailure { it.message?.let { msg -> sendMessage(msg) } }
+                        }
+                    }
+                }catch (e:Exception){
+                    sendMessage("err:"+e.message)
+                }
             }
 
             is ExploreIntent.AddLocal -> {
@@ -96,15 +112,11 @@ class ExploreViewModel @Inject constructor(
                     sendMessage("err:"+e.message)
                 }
             }
-        }
-    }
 
-    private suspend fun addLocalGame(url:String):Boolean{
-        return if(gameRepository.existLocalGame(url)){
-            false
-        }else{
-            gameRepository.addGameByUrl(url)
-            true
+            is ExploreIntent.Sort -> {
+                if(!_uiState.value.searchLoading)
+                    update(_uiState.value.copy(sortType = intent.sortType, searchApiModel = null))
+            }
         }
     }
 
@@ -119,4 +131,5 @@ sealed interface ExploreIntent {
     data class ClickItem(val url: String, val callback: ()->Unit) : ExploreIntent
     data class Star(val url: String) : ExploreIntent
     data class AddLocal(val url: String): ExploreIntent
+    data class Sort(val sortType: SearchSortType) : ExploreIntent
 }
