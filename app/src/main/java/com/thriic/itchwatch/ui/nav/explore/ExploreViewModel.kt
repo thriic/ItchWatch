@@ -58,11 +58,16 @@ class ExploreViewModel @Inject constructor(
                 update(_uiState.value.copy(searchLoading = false))
             }
             is ExploreIntent.SearchByTag -> {
-                update(_uiState.value.copy(searchLoading = true))
-                searchRepository.fetchTagSearch(tags = intent.tags, sortType = state.value.sortType)
-                    .onSuccess { update(_uiState.value.copy(searchApiModel = it)) }
-                    .onFailure { sendMessage(it.message) }
-                update(_uiState.value.copy(searchLoading = false))
+                if(!_uiState.value.searchLoading) {
+                    update(_uiState.value.copy(searchLoading = true, sortType = intent.sortType?:state.value.sortType))
+                    searchRepository.fetchTagSearch(
+                        tags = intent.tags,
+                        sortType = state.value.sortType
+                    )
+                        .onSuccess { update(_uiState.value.copy(searchApiModel = it)) }
+                        .onFailure { sendMessage(it.message) }
+                    update(_uiState.value.copy(searchLoading = false))
+                }
             }
 
             ExploreIntent.AllTags -> {
@@ -113,10 +118,6 @@ class ExploreViewModel @Inject constructor(
                 }
             }
 
-            is ExploreIntent.Sort -> {
-                if(!_uiState.value.searchLoading)
-                    update(_uiState.value.copy(sortType = intent.sortType, searchApiModel = null))
-            }
         }
     }
 
@@ -126,10 +127,9 @@ class ExploreViewModel @Inject constructor(
 
 sealed interface ExploreIntent {
     data class SearchByKeyword(val keyword: String = "") : ExploreIntent
-    data class SearchByTag(val tags:List<SearchTag>) : ExploreIntent
+    data class SearchByTag(val tags:List<SearchTag>, val sortType: SearchSortType? = null) : ExploreIntent
     data object AllTags : ExploreIntent
     data class ClickItem(val url: String, val callback: ()->Unit) : ExploreIntent
     data class Star(val url: String) : ExploreIntent
     data class AddLocal(val url: String): ExploreIntent
-    data class Sort(val sortType: SearchSortType) : ExploreIntent
 }

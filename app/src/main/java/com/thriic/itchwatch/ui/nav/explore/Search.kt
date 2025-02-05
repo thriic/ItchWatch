@@ -146,7 +146,7 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                 DropdownMenuItem(
                     text = { Text("Popular") },
                     onClick = {
-                        viewModel.send(ExploreIntent.Sort(SearchSortType.Popular))
+                        viewModel.send(ExploreIntent.SearchByTag(selectedTags, SearchSortType.Popular))
                     },
                     trailingIcon = {
                         if (state.sortType == SearchSortType.Popular) Icon(
@@ -155,11 +155,10 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                         )
                     }
                 )
-
                 DropdownMenuItem(
                     text = { Text("Top Rated") },
                     onClick = {
-                        viewModel.send(ExploreIntent.Sort(SearchSortType.TopRated))
+                        viewModel.send(ExploreIntent.SearchByTag(selectedTags, SearchSortType.TopRated))
                     },
                     trailingIcon = {
                         if (state.sortType == SearchSortType.TopRated) Icon(
@@ -169,21 +168,9 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text("Most Recent") },
-                    onClick = {
-                        viewModel.send(ExploreIntent.Sort(SearchSortType.MostRecent))
-                    },
-                    trailingIcon = {
-                        if (state.sortType == SearchSortType.MostRecent) Icon(
-                            imageVector = Icons.Default.Done,
-                            contentDescription = null
-                        )
-                    }
-                )
-                DropdownMenuItem(
                     text = { Text("Top Sellers") },
                     onClick = {
-                        viewModel.send(ExploreIntent.Sort(SearchSortType.TopSellers))
+                        viewModel.send(ExploreIntent.SearchByTag(selectedTags, SearchSortType.TopSellers))
                     },
                     trailingIcon = {
                         if (state.sortType == SearchSortType.TopSellers) Icon(
@@ -192,6 +179,19 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                         )
                     }
                 )
+                DropdownMenuItem(
+                    text = { Text("Most Recent") },
+                    onClick = {
+                        viewModel.send(ExploreIntent.SearchByTag(selectedTags, SearchSortType.MostRecent))
+                    },
+                    trailingIcon = {
+                        if (state.sortType == SearchSortType.MostRecent) Icon(
+                            imageVector = Icons.Default.Done,
+                            contentDescription = null
+                        )
+                    }
+                )
+
 //                HorizontalDivider()
 //                DropdownMenuItem(
 //                    text = { Text("Sort") },
@@ -229,8 +229,18 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
             listPane = {
                 AnimatedPane {
                     DropMenu(menuExpanded, onDismiss = { menuExpanded = false })
+                    val suggestions =
+                        (if (searchFieldState.text.isNotBlank()) state.allTags.filter { tag ->
+                            tag.containsTag(searchFieldState.text)
+                        } else
+                            state.allTags).filter { !selectedTags.contains(it) }
                     SearchLayout(
                         onApplySearch = { query ->
+                            //auto filter if user had input any words and there is only one suggestion tag
+                            if(suggestions.size == 1 && query.isNotBlank()) {
+                                selectedTags = selectedTags + suggestions[0]
+                                searchFieldState.clearText()
+                            }
                             viewModel.send(
                                 ExploreIntent.SearchByTag(selectedTags)
                             )
@@ -254,7 +264,7 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                             if (state.allTags.isEmpty()) viewModel.send(ExploreIntent.AllTags)
                             Column {
                                 FlowRow(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     selectedTags.forEach { tag ->
@@ -280,11 +290,7 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                                 ) {
                                     // Workaround for prepending before the first item
                                     item {}
-                                    val suggestions =
-                                        if (searchFieldState.text.isNotBlank()) state.allTags.filter { tag ->
-                                            tag.containsTag(searchFieldState.text)
-                                        } else
-                                            state.allTags
+
                                     val itemModifier = Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = 16.dp, vertical = 4.dp)
@@ -307,7 +313,7 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                                     }
 
                                     //filter selected tags for avoiding repeat selection
-                                    items(items = suggestions.filter { !selectedTags.contains(it) }) { tag ->
+                                    items(items = suggestions) { tag ->
                                         ListItem(
                                             headlineContent = { Text(tag.displayName) },
                                             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
