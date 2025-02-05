@@ -14,13 +14,18 @@ import com.thriic.core.model.Platform
 
 import java.io.BufferedReader
 import java.io.File
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 val gson: Gson = GsonBuilder()
     .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeConverter())
     .create()
 fun Context.share(content: List<LocalInfo>) {
-    val file = File(externalCacheDir, "data.iw")
+    val currentDate = LocalDate.now()
+    val formatter = DateTimeFormatter.ofPattern("yyyyMMdd")
+    val formattedDate = currentDate.format(formatter)
+    val file = File(externalCacheDir, "data${formattedDate}.iw")
     val json = gson.toJson(content)
     file.writeText(json)
     if (file.exists()) {
