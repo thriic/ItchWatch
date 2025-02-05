@@ -6,7 +6,8 @@ import com.thriic.core.network.model.SearchApiModel
 
 data class ExploreUiState(
     val sortType: SearchSortType = SearchSortType.Popular,
-    val loading: Boolean,
+    val searchLoading: Boolean,
+    val detailLading: Boolean,
     val searchApiModel: SearchApiModel? = null,
     val allTags: List<SearchTag>
 )

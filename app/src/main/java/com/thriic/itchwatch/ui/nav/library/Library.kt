@@ -120,21 +120,27 @@ fun Filter(
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
     ) {
-        ChipRow(
-            title = "Platform",
-            filterTags = allTags.filter { it.type == TagType.Platform },
-            selectedFilterTags = selectedFilterTags,
-            onSelected = onChangeSelected,
-            modifier = modifier.padding(top = 8.dp)
-        )
+        val platformTags = allTags.filter { it.type == TagType.Platform }
+        if(platformTags.isNotEmpty()) {
+            ChipRow(
+                title = "Platform",
+                filterTags = platformTags,
+                selectedFilterTags = selectedFilterTags,
+                onSelected = onChangeSelected,
+                modifier = modifier.padding(top = 8.dp)
+            )
+        }
 
-        ChipRow(
-            title = "Language",
-            filterTags = allTags.filter { it.type == TagType.Language },
-            selectedFilterTags = selectedFilterTags,
-            onSelected = onChangeSelected,
-            modifier = modifier
-        )
+        val languageTags = allTags.filter { it.type == TagType.Language }
+        if(languageTags.isNotEmpty()) {
+            ChipRow(
+                title = "Language",
+                filterTags = languageTags,
+                selectedFilterTags = selectedFilterTags,
+                onSelected = onChangeSelected,
+                modifier = modifier
+            )
+        }
 
 //        ChipFlowRow(
 //            title = "Tag",

@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.math.tanh
 
 @HiltViewModel
 class ExploreViewModel @Inject constructor(
@@ -22,7 +21,7 @@ class ExploreViewModel @Inject constructor(
 ): ViewModel() {
 
     private val _uiState = MutableStateFlow(ExploreUiState(
-        sortType = SearchSortType.Popular, loading = false,
+        sortType = SearchSortType.Popular, searchLoading = false, detailLading = false,
         allTags = listOf()))
     val state: StateFlow<ExploreUiState>
         get() = _uiState
@@ -44,24 +43,26 @@ class ExploreViewModel @Inject constructor(
     private suspend fun onHandle(intent: ExploreIntent) {
         when (intent) {
             is ExploreIntent.ClickItem -> {
+                update(_uiState.value.copy(detailLading = false))
                 val game = gameRepository.getGameFull(intent.url)
                 val localInfo = if(gameRepository.existLocalGame(intent.url)) gameRepository.getLocalInfo(intent.url) else null
                 _detailState.emit(DetailState(game, localInfo))
                 intent.callback()
+                update(_uiState.value.copy(detailLading = true))
             }
             is ExploreIntent.SearchByKeyword -> {
-                update(_uiState.value.copy(loading = true))
+                update(_uiState.value.copy(searchLoading = true))
                 fetchKeywordSearch(intent.keyword)
                     .onSuccess { update(_uiState.value.copy(searchApiModel = it)) }
                     .onFailure { sendMessage(it.message) }
-                update(_uiState.value.copy(loading = false))
+                update(_uiState.value.copy(searchLoading = false))
             }
             is ExploreIntent.SearchByTag -> {
-                update(_uiState.value.copy(loading = true))
+                update(_uiState.value.copy(searchLoading = true))
                 searchRepository.fetchTagSearch(tags = intent.tags, sortType = state.value.sortType)
                     .onSuccess { update(_uiState.value.copy(searchApiModel = it)) }
                     .onFailure { sendMessage(it.message) }
-                update(_uiState.value.copy(loading = false))
+                update(_uiState.value.copy(searchLoading = false))
             }
 
             ExploreIntent.AllTags -> {
@@ -79,8 +80,21 @@ class ExploreViewModel @Inject constructor(
             }
 
             is ExploreIntent.AddLocal -> {
-                val result = addLocalGame(intent.url)
-                if(result) sendMessage("added") else sendMessage("has already in lib")
+                try {
+                    if(gameRepository.existLocalGame(intent.url)){
+                        sendMessage("has already in lib")
+                    }else{
+                        gameRepository.addGameByUrl(intent.url).collect { result ->
+                            result
+                                .onSuccess {
+                                    sendMessage("added successfully")
+                                }
+                                .onFailure { it.message?.let { msg -> sendMessage(msg) } }
+                        }
+                    }
+                }catch (e:Exception){
+                    sendMessage("err:"+e.message)
+                }
             }
         }
     }

@@ -27,10 +27,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
@@ -38,7 +36,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -331,8 +328,8 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                             }
                         }
 
-                        if (state.loading) {
-                            Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
+                        if (state.searchLoading) {
+                            Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                                 CircularProgressIndicator()
                             }
                         } else {
@@ -378,7 +375,7 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                 AnimatedPane {
                     // Show the detail pane content if selected item is available
                     navigator.currentDestination?.content?.let {
-                        Log.i("Explore", it)
+                        Log.i("Search", it)
                         val detailState by viewModel.detailState.collectAsStateWithLifecycle()
                         val (game, localInfo) = detailState
                         if (game == null) throw Exception()
@@ -387,7 +384,7 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                             game = game,
                             localInfo = localInfo,
                             onChangeStarred = { url ->
-                                viewModel.send(ExploreIntent.Star(url))
+                                viewModel.send(ExploreIntent.AddLocal(url))
                             }
                         )
                     }
