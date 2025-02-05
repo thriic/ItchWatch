@@ -3,14 +3,14 @@ package com.thriic.core.model
 import androidx.room.Entity
 
 @Entity
-data class Tag(val displayName: String, val url: String, val type: TagType) {
+data class FilterTag(val displayName: String, val url: String, val type: TagType) {
     val tagName: String
         get() = if (type == TagType.Link || type == TagType.Author) url else url.substringAfterLast(
             "/"
         )
 
     override fun equals(other: Any?): Boolean {
-        if (other !is Tag) return false
+        if (other !is FilterTag) return false
         return other.displayName == displayName && other.type == type && other.tagName == tagName
     }
 
@@ -25,7 +25,7 @@ data class Tag(val displayName: String, val url: String, val type: TagType) {
     }
 }
 
-fun List<Tag>.filter(vararg types: TagType): List<Tag> {
+fun List<FilterTag>.filter(vararg types: TagType): List<FilterTag> {
     return this.filter { types.contains(it.type) }
 }
 

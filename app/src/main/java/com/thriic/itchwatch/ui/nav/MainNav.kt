@@ -19,8 +19,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.thriic.itchwatch.R
 import com.thriic.itchwatch.ui.nav.imports.Import
 import com.thriic.itchwatch.ui.nav.imports.ImportViewModel
-import com.thriic.itchwatch.ui.nav.explore.ExploreScreen
 import com.thriic.itchwatch.ui.nav.explore.ExploreViewModel
+import com.thriic.itchwatch.ui.nav.explore.SearchScreen
 import com.thriic.itchwatch.ui.nav.library.LibraryScreen
 import com.thriic.itchwatch.ui.nav.library.LibraryViewModel
 import com.thriic.itchwatch.ui.nav.settings.SettingsViewModel
@@ -59,7 +59,7 @@ fun AppNavHost(
         modifier = modifier
     ){
         when (currentDestination) {
-            AppDestinations.EXPLORE -> ExploreScreen(layout, viewModel = hiltViewModel<ExploreViewModel>(), sharedTransitionScope = sharedTransitionScope, animatedContentScope =  animatedContentScope)
+            AppDestinations.EXPLORE -> SearchScreen(viewModel = hiltViewModel<ExploreViewModel>())
             AppDestinations.LIBRARY -> LibraryScreen(layout,viewModel = hiltViewModel<LibraryViewModel>(), sharedTransitionScope = sharedTransitionScope, animatedContentScope =  animatedContentScope)
             AppDestinations.IMPORT -> Import(layout,viewModel = hiltViewModel<ImportViewModel>())
             AppDestinations.Settings -> SettingsScreen(viewModel = hiltViewModel<SettingsViewModel>())

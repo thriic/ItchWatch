@@ -23,17 +23,19 @@ import com.thriic.core.model.File
 import com.thriic.core.model.Game
 import com.thriic.core.model.LocalInfo
 import com.thriic.core.model.Platform
-import com.thriic.core.model.Tag
+import com.thriic.core.model.FilterTag
+import com.thriic.core.model.SearchTag
 import com.thriic.core.network.model.DevLogItem
 import java.lang.reflect.Type
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-@Database(entities = [Game::class,LocalInfo::class], version = 1, exportSchema = false)
+@Database(entities = [Game::class,LocalInfo::class,SearchTag::class], version = 1, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun gameDao(): GameDao
     abstract fun infoDao(): InfoDao
+    abstract fun tagDao(): TagDao
 }
 
 @Dao
@@ -70,6 +72,24 @@ interface InfoDao {
 
     @Delete
     fun delete(info: LocalInfo)
+}
+
+@Dao
+interface TagDao {
+    @Query("SELECT * FROM searchtag")
+    fun getAll(): List<SearchTag>
+
+    @Query("SELECT * FROM searchtag WHERE tagName = :name")
+    fun queryTag(name: String): SearchTag?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertAll(vararg tags: SearchTag)
+
+    @Query("DELETE FROM searchtag")
+    fun deleteAll()
+
+    @Query("SELECT COUNT(*) FROM searchtag")
+    fun count(): Int
 }
 
 class Converters {
@@ -122,13 +142,13 @@ class Converters {
     }
 
     @TypeConverter
-    fun stringToTags(value: String): List<Tag> {
-        val listType = object : TypeToken<List<Tag>>() {}.type
+    fun stringToTags(value: String): List<FilterTag> {
+        val listType = object : TypeToken<List<FilterTag>>() {}.type
         return gson.fromJson(value, listType)
     }
 
     @TypeConverter
-    fun tagsToString(list: List<Tag>): String {
+    fun tagsToString(list: List<FilterTag>): String {
         return gson.toJson(list)
     }
 

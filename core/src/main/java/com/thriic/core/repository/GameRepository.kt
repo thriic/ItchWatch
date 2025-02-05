@@ -1,7 +1,6 @@
 package com.thriic.core.repository
 
 import android.util.Log
-import androidx.room.PrimaryKey
 import com.thriic.core.local.GameLocalDataSource
 import com.thriic.core.model.GameBasic
 import com.thriic.core.model.Game
@@ -13,14 +12,11 @@ import com.thriic.core.network.model.DevLog
 import com.thriic.core.network.model.GameCell
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -33,6 +29,7 @@ class GameRepository @Inject constructor(
 ) {
 
     private var latestGames: MutableList<Game> = mutableListOf()
+    private var tempGames: MutableList<Game> = mutableListOf()
     private val failedList = mutableListOf<String>()
 
     //fetch a list of game basics
@@ -125,7 +122,7 @@ class GameRepository @Inject constructor(
     }
 
     //import single game
-    fun addGame(url: String): Flow<Result<GameBasic>> = flow {
+    fun addGameByUrl(url: String): Flow<Result<GameBasic>> = flow {
         val gameBasic = addGameAndEmit(url) { this@flow.emit(it) }
         if (gameBasic != null) emit(gameBasic)
     }
@@ -141,19 +138,20 @@ class GameRepository @Inject constructor(
             return null
         }
         try {
-            val gameFull =
-                gameRemoteDataSource.fetchGameData(url).map { it.toGameFull() }
+            //find tempGame first
+            val gameFull = tempGames.find { it.url == url }
+                ?: gameRemoteDataSource.fetchGameData(url).map { it.toGameFull() }
                     .getOrThrow()
             latestGames.add(gameFull)//add to member variable
             gameLocalDataSource.insertGames(gameFull)//insert to database
             //always init localInfo when add a new game
             val localInfo: LocalInfo
-            if(withLocalInfo) {
+            if (withLocalInfo) {
                 localInfo = getLocalInfo(url)
-            }else{
+            } else {
                 localInfo = LocalInfo(
                     url,
-                    blurb = blurb,
+                    blurb = blurb,//nullable
                     lastPlayedVersion = null,
                     lastPlayedTime = null,
                     starred = false
@@ -190,14 +188,14 @@ class GameRepository @Inject constructor(
     }
     fun size() = latestGames.size
 
-    suspend fun getGameFull(url: String, refresh: Boolean = false): Game? {
-        return if (refresh) {
-            //fetch and update to latestGames
+    suspend fun getGameFull(url: String, refresh: Boolean = false): Game {
+        val game = latestGames.find { it.url == url }
+        return if (refresh || game == null) {
+            //fetch and update to temp
             //wont insert to database
-            gameRemoteDataSource.fetchGameData(url).getOrNull()?.toGameFull()
-                ?.also { latestGames.add(it) }
+            tempGames.find { it.url == url } ?: gameRemoteDataSource.fetchGameData(url).getOrThrow().toGameFull().also { tempGames.add(it) }
         } else {
-            latestGames.find { it.url == url }
+            game
         }
     }
 

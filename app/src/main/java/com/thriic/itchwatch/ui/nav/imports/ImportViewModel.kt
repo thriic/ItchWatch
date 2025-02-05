@@ -42,7 +42,7 @@ class ImportViewModel @Inject constructor(
         }
     }
 
-    suspend fun clearProgress() {
+    private suspend fun clearProgress() {
         update(_uiState.value.copy(loading = false, progress = null, progressText = ""))
     }
 
@@ -55,11 +55,10 @@ class ImportViewModel @Inject constructor(
 
             is ImportIntent.AddGame -> {
                 update(_uiState.value.copy(loading = true))
-                repository.addGame(intent.url).collect { result ->
+                repository.addGameByUrl(intent.url).collect { result ->
                     result
                         .onSuccess {
                             sendMessage("added successfully")
-                            navigator.navigate("detail?url=${intent.url.encodeUrl()}&id=0")
                         }
                         .onFailure { it.message?.let { msg -> sendMessage(msg) } }
                     update(_uiState.value.copy(loading = false, progress = null, progressText = ""))

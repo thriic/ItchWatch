@@ -1,6 +1,6 @@
 package com.thriic.itchwatch.utils
 
-import com.thriic.core.model.Tag
+import com.thriic.core.model.FilterTag
 import com.thriic.core.model.TagType
 import com.thriic.core.model.filter
 import java.net.URLDecoder
@@ -28,7 +28,7 @@ fun String.decodeUrl(): String = URLDecoder.decode(this, StandardCharsets.UTF_8.
 
 data class Href(val url: String, val display: String)
 
-fun List<Tag>.getHref(): List<Pair<String, String>> {
+fun List<FilterTag>.getHref(): List<Pair<String, String>> {
     return this.filter(TagType.Link).map {
         Pair(it.url, it.displayName)
     }

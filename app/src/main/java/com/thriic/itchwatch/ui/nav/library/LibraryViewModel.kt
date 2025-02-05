@@ -4,9 +4,10 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thriic.core.model.GameBasic
-import com.thriic.core.model.Tag
+import com.thriic.core.model.FilterTag
 import com.thriic.core.repository.GameRepository
 import com.thriic.itchwatch.Navigator
+import com.thriic.itchwatch.ui.detail.DetailState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -167,8 +168,8 @@ class LibraryViewModel @Inject constructor(
                 if (intent.keyword != null){
                     _filterState.emit(_filterState.value.copy(keyword = intent.keyword))
                 }
-                if (intent.tags != null){
-                    _filterState.emit(_filterState.value.copy(tags = intent.tags))
+                if (intent.filterTags != null){
+                    _filterState.emit(_filterState.value.copy(filterTags = intent.filterTags))
                 }
             }
 
@@ -289,7 +290,7 @@ sealed interface LibraryIntent {
     data class Mark(val url: String) : LibraryIntent
     //data class AddGames(val text: String) : LibraryIntent
     data class Sort(val sortType: SortType) : LibraryIntent
-    data class UpdateFilter(val keyword:String?, val tags: Set<Tag>?): LibraryIntent
+    data class UpdateFilter(val keyword:String?, val filterTags: Set<FilterTag>?): LibraryIntent
     data object SyncRepository : LibraryIntent
 }
 

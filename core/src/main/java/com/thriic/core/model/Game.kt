@@ -48,7 +48,7 @@ data class Game(
      * @see com.thriic.core.network.DevLogRemoteDataSource.fetchDevLog
      */
     val files: List<File>,
-    val tags: List<Tag>
+    val filterTags: List<FilterTag>
 ) {
     fun toBasic(localInfo: LocalInfo): GameBasic =
         GameBasic(
@@ -60,7 +60,7 @@ data class Game(
             versionOrFileName = files.getVersionOrFileName(),
             platforms = platforms,
             devLogs = devLogs,
-            filterTags = tags.filter(TagType.Platform, TagType.NormalTag, TagType.Language),
+            filterFilterTags = filterTags.filter(TagType.Platform, TagType.NormalTag, TagType.Language),
             localInfo = localInfo
         )
 }
@@ -77,20 +77,20 @@ data class GameBasic(
     val versionOrFileName: String?,
     val platforms: Set<Platform>,
     val devLogs: List<DevLogItem>?,
-    val filterTags: List<Tag>,
+    val filterFilterTags: List<FilterTag>,
     val localInfo: LocalInfo
 ){
     val updated:Boolean
         get() = localInfo.lastPlayedVersion != null && versionOrFileName != localInfo.lastPlayedVersion
 }
 
-data class Rating(val ratingValue: String, val ratingCount: Int)
+data class Rating(val ratingValue: String, val ratingCount: Int,val ratingPercent:Double? = null)
 
 fun GameApiModel.toGameFull(): Game {
     var updatedTime: String? = null
     var publishedTime: String? = null
 
-    val tagList = mutableListOf<Tag>()
+    val filterTagList = mutableListOf<FilterTag>()
     tagElements.forEach { tr ->
         val tds = tr.select("td")
         if (tds.size >= 2) {
@@ -105,68 +105,68 @@ fun GameApiModel.toGameFull(): Game {
                 }
 
                 "Status" -> {
-                    tagList += with(valueElement.selectFirst("a")!!) {
-                        Tag(text(), attr("href"), TagType.Status)
+                    filterTagList += with(valueElement.selectFirst("a")!!) {
+                        FilterTag(text(), attr("href"), TagType.Status)
                     }
                 }
 
                 "Platforms" -> {
-                    tagList += valueElement.select("a").map {
-                        Tag(it.text(), it.attr("href"), TagType.Platform)
+                    filterTagList += valueElement.select("a").map {
+                        FilterTag(it.text(), it.attr("href"), TagType.Platform)
                     }
                 }
 
                 "Author", "Authors" -> {
-                    tagList += valueElement.select("a").map {
-                        Tag(it.text(), it.attr("href"), TagType.Author)
+                    filterTagList += valueElement.select("a").map {
+                        FilterTag(it.text(), it.attr("href"), TagType.Author)
                     }
                 }
 
                 "Category" -> {
-                    tagList += with(valueElement.selectFirst("a")!!) {
-                        Tag(text(), attr("href"), TagType.Category)
+                    filterTagList += with(valueElement.selectFirst("a")!!) {
+                        FilterTag(text(), attr("href"), TagType.Category)
                     }
                 }
 
                 "Genre" -> {
-                    tagList += valueElement.select("a").map {
-                        Tag(it.text(), it.attr("href"), TagType.Genre)
+                    filterTagList += valueElement.select("a").map {
+                        FilterTag(it.text(), it.attr("href"), TagType.Genre)
                     }
                 }
 
                 "Made with" -> {
-                    tagList += valueElement.select("a").map {
-                        Tag(it.text(), it.attr("href"), TagType.MadeWith)
+                    filterTagList += valueElement.select("a").map {
+                        FilterTag(it.text(), it.attr("href"), TagType.MadeWith)
                     }
                 }
 
                 "Tags" -> {
-                    tagList += valueElement.select("a").map {
-                        Tag(it.text(), it.attr("href"), TagType.NormalTag)
+                    filterTagList += valueElement.select("a").map {
+                        FilterTag(it.text(), it.attr("href"), TagType.NormalTag)
                     }
                 }
 
                 "Inputs" -> {
-                    tagList += valueElement.select("a").map {
-                        Tag(it.text(), it.attr("href"), TagType.Input)
+                    filterTagList += valueElement.select("a").map {
+                        FilterTag(it.text(), it.attr("href"), TagType.Input)
                     }
                 }
 
                 "Languages" -> {
-                    tagList += valueElement.select("a").map {
-                        Tag(it.text(), it.attr("href"), TagType.Language)
+                    filterTagList += valueElement.select("a").map {
+                        FilterTag(it.text(), it.attr("href"), TagType.Language)
                     }
                 }
 
                 "Average session" -> {
-                    tagList += with(valueElement.selectFirst("a")!!) {
-                        Tag(text(), attr("href"), TagType.Duration)
+                    filterTagList += with(valueElement.selectFirst("a")!!) {
+                        FilterTag(text(), attr("href"), TagType.Duration)
                     }
                 }
 
                 "Links" -> {
-                    tagList += valueElement.select("a").map {
-                        Tag(it.text(), it.attr("href"), TagType.Link)
+                    filterTagList += valueElement.select("a").map {
+                        FilterTag(it.text(), it.attr("href"), TagType.Link)
                     }
                 }
 
@@ -188,8 +188,8 @@ fun GameApiModel.toGameFull(): Game {
     }
 
     val platforms = mutableSetOf<Platform>()
-    if (tagList.any { it.type == TagType.Platform }) {
-        tagList.filter { it.type == TagType.Platform }.forEach {
+    if (filterTagList.any { it.type == TagType.Platform }) {
+        filterTagList.filter { it.type == TagType.Platform }.forEach {
             platformMap.entries.firstOrNull { (platformName, _) ->
                 it.displayName.contains(platformName, ignoreCase = true)
             }?.value?.let { platforms.add(it) }
@@ -227,7 +227,7 @@ fun GameApiModel.toGameFull(): Game {
         devLogs = devLogs,
         updatedTime = updatedTime?.toLocalDateTime(),
         publishedTime = publishedTime?.toLocalDateTime(),
-        tags = tagList,
+        filterTags = filterTagList,
         platforms = platforms,
         files = files
     )

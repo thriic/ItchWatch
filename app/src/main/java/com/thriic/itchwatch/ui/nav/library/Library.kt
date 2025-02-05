@@ -92,7 +92,7 @@ import com.thriic.core.formatTimeDifference
 import com.thriic.core.model.GameBasic
 import com.thriic.core.model.LocalInfo
 import com.thriic.core.model.Platform
-import com.thriic.core.model.Tag
+import com.thriic.core.model.FilterTag
 import com.thriic.core.model.TagType
 import com.thriic.core.network.model.DevLogItem
 import com.thriic.itchwatch.R
@@ -108,9 +108,9 @@ import kotlin.math.roundToInt
 
 @Composable
 fun Filter(
-    allFilters: Set<Tag>,
-    selectedTags: Set<Tag>,
-    onChangeSelected: (Tag, Boolean) -> Unit
+    allFilters: Set<FilterTag>,
+    selectedFilterTags: Set<FilterTag>,
+    onChangeSelected: (FilterTag, Boolean) -> Unit
 ) {
     val allTags by remember { mutableStateOf(allFilters) }
 
@@ -122,16 +122,16 @@ fun Filter(
     ) {
         ChipRow(
             title = "Platform",
-            tags = allTags.filter { it.type == TagType.Platform },
-            selectedTags = selectedTags,
+            filterTags = allTags.filter { it.type == TagType.Platform },
+            selectedFilterTags = selectedFilterTags,
             onSelected = onChangeSelected,
             modifier = modifier.padding(top = 8.dp)
         )
 
         ChipRow(
             title = "Language",
-            tags = allTags.filter { it.type == TagType.Language },
-            selectedTags = selectedTags,
+            filterTags = allTags.filter { it.type == TagType.Language },
+            selectedFilterTags = selectedFilterTags,
             onSelected = onChangeSelected,
             modifier = modifier
         )
@@ -151,10 +151,10 @@ fun Filter(
 @Composable
 fun ChipRow(
     title: String,
-    tags: List<Tag>,
-    selectedTags: Set<Tag>,
+    filterTags: List<FilterTag>,
+    selectedFilterTags: Set<FilterTag>,
     modifier: Modifier = Modifier,
-    onSelected: (Tag, Boolean) -> Unit
+    onSelected: (FilterTag, Boolean) -> Unit
 ) {
     Text(
         title,
@@ -163,8 +163,8 @@ fun ChipRow(
     )
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         item { Spacer(modifier = Modifier.width(8.dp)) }
-        items(tags) { tag ->
-            val selected = selectedTags.contains(tag)
+        items(filterTags) { tag ->
+            val selected = selectedFilterTags.contains(tag)
             FilterChip(
                 selected = selected,
                 onClick = { onSelected(tag, !selected) },
@@ -191,12 +191,12 @@ fun ChipRow(
 @Composable
 fun ChipFlowRow(
     title: String,
-    tags: List<Tag>,
-    selectedTags: Set<Tag>,
+    filterTags: List<FilterTag>,
+    selectedFilterTags: Set<FilterTag>,
     modifier: Modifier = Modifier,
-    onSelected: (Tag, Boolean) -> Unit
+    onSelected: (FilterTag, Boolean) -> Unit
 ) {
-    val totalCount = tags.size
+    val totalCount = filterTags.size
     var maxLines by remember {
         mutableStateOf(2)
     }
@@ -235,8 +235,8 @@ fun ChipFlowRow(
         ),
         itemCount = totalCount
     ) { index ->
-        val tag = tags[index]
-        val selected = selectedTags.contains(tag)
+        val tag = filterTags[index]
+        val selected = selectedFilterTags.contains(tag)
         FilterChip(
             selected = selected,
             onClick = { onSelected(tag, !selected) },
@@ -299,7 +299,7 @@ fun LibraryScreen(
     var searchBarOffsetY by remember { mutableIntStateOf(0) }
 
 
-    var selectedTags by remember { mutableStateOf(filterState.tags) }
+    var selectedTags by remember { mutableStateOf(filterState.filterTags) }
 
     val listState = rememberLazyListState()
 
@@ -430,7 +430,7 @@ fun LibraryScreen(
                         },
                         filter = {
                             val tagSet = itemState.flatMap { game ->
-                                game.filterTags
+                                game.filterFilterTags
                             }.toSet()
                             Filter(tagSet, selectedTags) { tag, selected ->
                                 selectedTags = if (selected) {
@@ -476,7 +476,7 @@ fun LibraryScreen(
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp)
                             val filterItems = itemState.filter {
-                                it.filterTags.containsAll(filterState.tags) && it.name.contains(
+                                it.filterFilterTags.containsAll(filterState.filterTags) && it.name.contains(
                                     filterState.keyword,
                                     ignoreCase = true
                                 )
@@ -534,9 +534,16 @@ fun LibraryScreen(
                     // Show the detail pane content if selected item is available
                     navigator.currentDestination?.content?.let {
                         Log.i("Lib", it)
+                        val uiState by viewModel.detailState.collectAsStateWithLifecycle()
+                        val (game, localInfo) = uiState
+                        if(game == null || localInfo == null) throw Exception()
                         DetailScreen(
                             url = it,
-                            viewModel = viewModel
+                            game = game,
+                            localInfo = localInfo,
+                            onChangeStarred = { url ->
+                                viewModel.send(LibraryIntent.Star(url))
+                            }
                         )
                     }
                 }
@@ -691,7 +698,7 @@ fun SearchItemPreview() {
                 pubDate = LocalDateTime.now(),
             )
         ),
-        filterTags = emptyList(),
+        filterFilterTags = emptyList(),
         localInfo = LocalInfo(
             url = "https://anuke.itch.io/mindustry",
             blurb = null,

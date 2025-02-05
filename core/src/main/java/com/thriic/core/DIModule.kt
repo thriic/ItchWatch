@@ -45,5 +45,9 @@ object DIModule {
     @Singleton
     fun provideInfoDao(appDatabase: AppDatabase) = appDatabase.infoDao()
 
+    @Provides
+    @Singleton
+    fun provideTagDao(appDatabase: AppDatabase) = appDatabase.tagDao()
+
 }
 

@@ -3,6 +3,8 @@ package com.thriic.core.network.model
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.ported.exception.IOException
 import com.thriic.core.model.Platform
+import com.thriic.core.model.Rating
+import com.thriic.core.model.SearchTag
 import com.thriic.core.model.platformMap
 
 class SearchApiModel(
@@ -27,6 +29,7 @@ data class SearchResult(
     val description: String?,
     val price: String?,
     val genre: String?,
+    val rating: Rating? = null,
     /**
      * may empty
      */
@@ -54,6 +57,13 @@ fun Document.toSearchApiModel(): SearchApiModel {
             }
         }
         val author = gameData.selectFirst("div.game_author")!!
+        val ratingHtml = gameData.selectFirst("div.game_rating")
+        var rating:Rating? = null
+        if(ratingHtml!=null){
+            val ratingValue = ratingHtml.selectFirst("div.star_fill")!!.attr("style").substringAfter("width:").substringBefore("%").trim().toDouble()
+            val ratingCount = ratingHtml.selectFirst("span.rating_count")!!.text().substringAfter("(").substringBefore("total").replace(",","").trim()
+            rating = Rating("%.1f".format(ratingValue * 5 / 100), ratingCount.toInt(),ratingValue)
+        }
         SearchResult(
             gameLink = gameThumb.attr("href"),
             title = gameData.selectFirst("a.title.game_link")!!.text(),
@@ -63,8 +73,24 @@ fun Document.toSearchApiModel(): SearchApiModel {
             verifiedAuthor = author.selectFirst("svg.svgicon.icon_verified") != null,
             price = gameData.selectFirst("div.price_value")?.text(),
             genre = gameData.selectFirst("div.game_genre")?.text(),
+            rating = rating,
             platforms = platforms
         )
     }
     return SearchApiModel(items = searchResults, total = searchResults.size)
+}
+
+fun Document.parseSearchTags():List<SearchTag>{
+    val tagElements = selectFirst("select.tag_selector")?.select("option") ?: throw Exception("cannot fetch tags")
+    val tags = mutableListOf<SearchTag>()
+    tagElements.forEach {
+        val url = it.attr("value")
+        if(url.isNotBlank()){
+            val displayName = it.text()
+            val classification = url.substringAfter("/").substringBeforeLast("/")
+            val tagName = url.substringAfterLast("/")
+            tags.add(SearchTag(displayName = displayName, tagName = tagName, classification = classification))
+        }
+    }
+    return tags
 }

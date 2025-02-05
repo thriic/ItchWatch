@@ -5,8 +5,6 @@ import com.fleeksoft.ksoup.model.MetaData
 import com.fleeksoft.ksoup.nodes.Document
 import com.fleeksoft.ksoup.select.Elements
 import com.google.gson.Gson
-import com.thriic.core.model.Tag
-import com.thriic.core.model.TagType
 import com.thriic.core.network.NetworkException
 
 

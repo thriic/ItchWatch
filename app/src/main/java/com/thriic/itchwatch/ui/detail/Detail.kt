@@ -56,6 +56,8 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.thriic.core.formatTimeDifference
 import com.thriic.core.model.File
+import com.thriic.core.model.Game
+import com.thriic.core.model.LocalInfo
 import com.thriic.core.model.Platform
 import com.thriic.itchwatch.ui.theme.ItchWatchTheme
 import com.thriic.core.model.TagType
@@ -71,20 +73,15 @@ import com.thriic.itchwatch.utils.getHref
 import com.thriic.itchwatch.utils.phraseSocialUrl
 
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun DetailScreen(
     url: String,
-    sharedTransitionScope: SharedTransitionScope? = null,
-    animatedContentScope: AnimatedContentScope? = null,
-    viewModel: LibraryViewModel
-) {
-    val uiState by viewModel.detailState.collectAsStateWithLifecycle()
-    val (game, localInfo) = uiState
-    if(game == null || localInfo == null) throw Exception()
+    game: Game,
+    localInfo: LocalInfo?,
+    onChangeStarred:(String)->Unit
+    ) {
     Surface {
-        with(sharedTransitionScope) {
-            LazyColumn(
+        LazyColumn(
                 Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp),
@@ -113,10 +110,6 @@ fun DetailScreen(
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .statusBarsPadding()
-//                                    .sharedElement(
-//                                        sharedTransitionScope.rememberSharedContentState(key = "image-$id"),
-//                                        animatedVisibilityScope = animatedContentScope
-//                                    )
                             .aspectRatio(315f / 250f)
                             .clip(RoundedCornerShape(8.dp))
                             .fillMaxWidth()
@@ -130,20 +123,15 @@ fun DetailScreen(
                     val uriHandler = LocalUriHandler.current
                     MainCard(
                         title = game.name,
-                        author = game.tags.filter(TagType.Author)
+                        author = game.filterTags.filter(TagType.Author)
                             .joinToString(",") { it.displayName },
                         updatedTime = game.updatedTime?.formatTimeDifference(),
                         publishedTime = game.publishedTime?.formatTimeDifference(),
-                        playedTime = localInfo.lastPlayedTime?.formatTimeDifference(),
+                        playedTime = localInfo?.lastPlayedTime?.formatTimeDifference(),
                         cardModifier = cardModifier,
-                        titleModifier = Modifier,
-//                                    .sharedElement(
-//                                        sharedTransitionScope.rememberSharedContentState(key = "text-$id"),
-//                                        animatedVisibilityScope = animatedContentScope
-//                                    ),
-                        starred = localInfo.starred,
+                        starred = localInfo?.starred ?: false,
                         onChangeStarred = { starred ->
-                            viewModel.send(LibraryIntent.Star(game.url))
+                            onChangeStarred(game.url)
                         },
                         onShare = {
                             uriHandler.openUri(game.url)
@@ -162,7 +150,7 @@ fun DetailScreen(
                         FileCard(cardModifier = cardModifier, files = game.files)
                     }
                 }
-                val hrefs = (game.tags.getHref() + (game.content?.let { getContentLinks(it) }
+                val hrefs = (game.filterTags.getHref() + (game.content?.let { getContentLinks(it) }
                     ?: emptyList())).phraseSocialUrl()
                 if (hrefs.isNotEmpty()) {
                     item {
@@ -177,7 +165,7 @@ fun DetailScreen(
 
 
         }
-    }
+
 }
 
 @Composable

@@ -1,6 +1,7 @@
 package com.thriic.itchwatch.ui.detail
 
 import com.thriic.core.model.Game
+import com.thriic.core.model.LocalInfo
 import com.thriic.core.network.model.DevLog
 
 sealed interface DetailUiState {
@@ -16,3 +17,5 @@ sealed interface DetailUiState {
         val devLog: DevLog?,
     ) : DetailUiState
 }
+
+data class DetailState(val game: Game?,val localInfo: LocalInfo?)

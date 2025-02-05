@@ -1,6 +1,5 @@
 package com.thriic.itchwatch.ui.nav.explore
-
-import android.annotation.SuppressLint
+//
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -13,14 +12,12 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
@@ -39,11 +36,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,246 +51,230 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.thriic.core.model.Platform
 import com.thriic.core.network.model.SearchResult
 import com.thriic.itchwatch.ui.common.GameInfoItem
-import com.thriic.itchwatch.ui.common.PlatformRow
 import com.thriic.itchwatch.utils.WatchLayout
 import com.thriic.itchwatch.utils.getId
-
-@OptIn(ExperimentalSharedTransitionApi::class)
-@Composable
-fun ExploreScreen(layout: WatchLayout, viewModel: ExploreViewModel = viewModel(),
-                  sharedTransitionScope: SharedTransitionScope,
-                  animatedContentScope: AnimatedContentScope
-) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
-
-    var text by rememberSaveable { mutableStateOf("") }
-    var expanded by rememberSaveable { mutableStateOf(false) }
-
-    Box(
-        Modifier
-            .fillMaxSize()
-            .semantics { isTraversalGroup = true }) {
-        SearchLayout(
-            query = text,
-            onQueryChange = { text = it },
-            onSearch = {
-                expanded = false
-                viewModel.send(ExploreIntent.Search(it))
-            },
-            expanded = expanded,
-            onExpandedChange = { expanded = it },
-            layout = layout
-        ) {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                repeat(4) { idx ->
-                    val resultText = "Suggestion $idx"
-                    ListItem(
-                        headlineContent = { Text(resultText) },
-                        supportingContent = { Text("Additional info") },
-                        leadingContent = { Icon(Icons.Filled.Star, contentDescription = null) },
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        modifier =
-                        Modifier
-                            .clickable {
-                                expanded = false
-                            }
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp)
-                    )
-                }
-            }
-        }
-
-        Column(
-            modifier = Modifier
-                .statusBarsPadding()
-                .padding(top = 72.dp)
-                .semantics { traversalIndex = 1f }
-        ) {
-            when (val uiState = state) {
-                is ExploreUiState.Ready -> {
-                    if (layout == WatchLayout.Compact) {
-                        LazyColumn(
-                            contentPadding = PaddingValues(
-                                top = 16.dp,
-                                bottom = 16.dp
-                            )
-                        ) {
-                            val itemModifier = Modifier
-                                .fillMaxWidth()
-                            itemsIndexed(uiState.searchApiModel.items, key = { index, item -> index }) { _, item ->
-                                val id = item.gameLink.getId()
-                                with(sharedTransitionScope) {
-                                    SearchItem(
-                                        item,
-                                        itemModifier
-                                            .clickable {
-                                                viewModel.send(
-                                                    ExploreIntent.OpenGame(item.gameLink, id)
-                                                )
-                                            }
-                                            .padding(16.dp),
-                                        imageModifier = Modifier
-                                            .sharedElement(
-                                                sharedTransitionScope.rememberSharedContentState(key = "image-$id"),
-                                                animatedVisibilityScope = animatedContentScope
-                                            ),
-                                        textModifier = Modifier.sharedElement(
-                                            sharedTransitionScope.rememberSharedContentState(key = "text-$id"),
-                                            animatedVisibilityScope = animatedContentScope,
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    } else {
-                        LazyVerticalStaggeredGrid(
-                            columns = StaggeredGridCells.Adaptive(250.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalItemSpacing = 16.dp,
-                            contentPadding = PaddingValues(end = 16.dp),
-                            content = {
-                                val itemModifier = Modifier
-                                    .fillMaxWidth()
-                                val imageModifier = Modifier
-                                    .aspectRatio(315f / 250f)
-                                    .clip(RoundedCornerShape(8.dp))
-                                items(uiState.searchApiModel.items) {
-                                    SearchItemExpanded(it, itemModifier, imageModifier)
-                                }
-                            },
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
-
-                }
-
-                is ExploreUiState.Loading -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
-
-                is ExploreUiState.Error -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text("Error: ${uiState.errorMessage}")
-                    }
-                }
-
-                ExploreUiState.Init -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                    }
-                }
-            }
-        }
-
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun BoxScope.SearchLayout(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onSearch: (String) -> Unit,
-    expanded: Boolean,
-    onExpandedChange: (Boolean) -> Unit,
-    layout: WatchLayout,
-    content: @Composable (ColumnScope.() -> Unit)
-) {
-    if (layout == WatchLayout.Compact) {
-        SearchBar(
-            modifier =
-            Modifier
-                .align(Alignment.TopCenter)
-                .semantics {
-                    traversalIndex = 0f
-                },
-            inputField = {
-                SearchBarDefaults.InputField(
-                    query = query,
-                    onSearch = onSearch,
-                    expanded = expanded,
-                    onExpandedChange = onExpandedChange,
-                    placeholder = { Text("Hinted search text") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    trailingIcon = { Icon(Icons.Default.MoreVert, contentDescription = null) },
-                    onQueryChange = onQueryChange,
-                    modifier = Modifier,
-                    enabled = true,
-                )
-            },
-            expanded = expanded,
-            onExpandedChange = onExpandedChange,
-            content = content
-        )
-    } else {
-        DockedSearchBar(
-            modifier =
-            Modifier
-                .align(Alignment.TopEnd)
-                .padding(end = 16.dp)
-                .statusBarsPadding()
-                .semantics {
-                    traversalIndex = 0f
-                },
-            inputField = {
-                SearchBarDefaults.InputField(
-                    query = query,
-                    onSearch = onSearch,
-                    expanded = expanded,
-                    onExpandedChange = onExpandedChange,
-                    placeholder = { Text("Hinted search text") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    trailingIcon = { Icon(Icons.Default.MoreVert, contentDescription = null) },
-                    onQueryChange = onQueryChange,
-                    modifier = Modifier,
-                    enabled = true,
-                )
-            },
-            expanded = expanded,
-            onExpandedChange = onExpandedChange,
-            content = content
-        )
-    }
-}
-
-
+//
+//@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3AdaptiveApi::class)
+//@Composable
+//fun ExploreScreen(layout: WatchLayout, viewModel: ExploreViewModel = viewModel(),
+//                  sharedTransitionScope: SharedTransitionScope,
+//                  animatedContentScope: AnimatedContentScope
+//) {
+//    val state by viewModel.state.collectAsStateWithLifecycle()
+//
+//    var text by rememberSaveable { mutableStateOf("") }
+//    var expanded by rememberSaveable { mutableStateOf(false) }
+//    Box(
+//        Modifier
+//            .fillMaxSize()
+//            .semantics { isTraversalGroup = true }) {
+//        SearchLayout(
+//            query = text,
+//            onQueryChange = { text = it },
+//            onSearch = {
+//                expanded = false
+//                viewModel.send(ExploreIntent.Search(it))
+//            },
+//            expanded = expanded,
+//            onExpandedChange = { expanded = it },
+//            layout = layout
+//        ) {
+//            Column(Modifier.verticalScroll(rememberScrollState())) {
+//                repeat(4) { idx ->
+//                    val resultText = "Suggestion $idx"
+//                    ListItem(
+//                        headlineContent = { Text(resultText) },
+//                        supportingContent = { Text("Additional info") },
+//                        leadingContent = { Icon(Icons.Filled.Star, contentDescription = null) },
+//                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+//                        modifier =
+//                        Modifier
+//                            .clickable {
+//                                expanded = false
+//                            }
+//                            .fillMaxWidth()
+//                            .padding(horizontal = 16.dp, vertical = 4.dp)
+//                    )
+//                }
+//            }
+//        }
+//
+//        Column(
+//            modifier = Modifier
+//                .statusBarsPadding()
+//                .padding(top = 72.dp)
+//                .semantics { traversalIndex = 1f }
+//        ) {
+//            when (val uiState = state) {
+//                is ExploreUiState.Ready -> {
+//                    if (layout == WatchLayout.Compact) {
+//                        LazyColumn(
+//                            contentPadding = PaddingValues(
+//                                top = 16.dp,
+//                                bottom = 16.dp
+//                            )
+//                        ) {
+//                            val itemModifier = Modifier
+//                                .fillMaxWidth()
+//                            itemsIndexed(uiState.searchApiModel.items, key = { index, item -> index }) { _, item ->
+//                                val id = item.gameLink.getId()
+//                                with(sharedTransitionScope) {
+//                                    SearchItem(
+//                                        item,
+//                                        itemModifier
+//                                            .clickable {
+//                                                viewModel.send(ExploreIntent.ClickItem(item.gameLink, id))
+//                                            }
+//                                            .padding(16.dp)
+//                                    )
+//                                }
+//                            }
+//                        }
+//                    } else {
+//                        LazyVerticalStaggeredGrid(
+//                            columns = StaggeredGridCells.Adaptive(250.dp),
+//                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+//                            verticalItemSpacing = 16.dp,
+//                            contentPadding = PaddingValues(end = 16.dp),
+//                            content = {
+//                                val itemModifier = Modifier
+//                                    .fillMaxWidth()
+//                                val imageModifier = Modifier
+//                                    .aspectRatio(315f / 250f)
+//                                    .clip(RoundedCornerShape(8.dp))
+//                                items(uiState.searchApiModel.items) {
+//                                    SearchItemExpanded(it, itemModifier, imageModifier)
+//                                }
+//                            },
+//                            modifier = Modifier.fillMaxSize()
+//                        )
+//                    }
+//
+//                }
+//
+//                is ExploreUiState.Loading -> {
+//                    Column(
+//                        modifier = Modifier
+//                            .fillMaxSize()
+//                            .padding(16.dp),
+//                        verticalArrangement = Arrangement.Center,
+//                        horizontalAlignment = Alignment.CenterHorizontally
+//                    ) {
+//                        CircularProgressIndicator()
+//                    }
+//                }
+//
+//                is ExploreUiState.Error -> {
+//                    Column(
+//                        modifier = Modifier.fillMaxSize(),
+//                        verticalArrangement = Arrangement.Center,
+//                        horizontalAlignment = Alignment.CenterHorizontally
+//                    ) {
+//                        Text("Error: ${uiState.errorMessage}")
+//                    }
+//                }
+//
+//                ExploreUiState.Init -> {
+//                    Column(
+//                        modifier = Modifier.fillMaxSize(),
+//                        verticalArrangement = Arrangement.Center,
+//                        horizontalAlignment = Alignment.CenterHorizontally
+//                    ) {
+//                    }
+//                }
+//            }
+//        }
+//
+//    }
+//}
+//
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun BoxScope.SearchLayout(
+//    query: String,
+//    onQueryChange: (String) -> Unit,
+//    onSearch: (String) -> Unit,
+//    expanded: Boolean,
+//    onExpandedChange: (Boolean) -> Unit,
+//    layout: WatchLayout,
+//    content: @Composable (ColumnScope.() -> Unit)
+//) {
+//    if (layout == WatchLayout.Compact) {
+//        SearchBar(
+//            modifier =
+//            Modifier
+//                .align(Alignment.TopCenter)
+//                .semantics {
+//                    traversalIndex = 0f
+//                },
+//            inputField = {
+//                SearchBarDefaults.InputField(
+//                    query = query,
+//                    onSearch = onSearch,
+//                    expanded = expanded,
+//                    onExpandedChange = onExpandedChange,
+//                    placeholder = { Text("Hinted search text") },
+//                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+//                    trailingIcon = { Icon(Icons.Default.MoreVert, contentDescription = null) },
+//                    onQueryChange = onQueryChange,
+//                    modifier = Modifier,
+//                    enabled = true,
+//                )
+//            },
+//            expanded = expanded,
+//            onExpandedChange = onExpandedChange,
+//            content = content
+//        )
+//    } else {
+//        DockedSearchBar(
+//            modifier =
+//            Modifier
+//                .align(Alignment.TopEnd)
+//                .padding(end = 16.dp)
+//                .statusBarsPadding()
+//                .semantics {
+//                    traversalIndex = 0f
+//                },
+//            inputField = {
+//                SearchBarDefaults.InputField(
+//                    query = query,
+//                    onSearch = onSearch,
+//                    expanded = expanded,
+//                    onExpandedChange = onExpandedChange,
+//                    placeholder = { Text("Hinted search text") },
+//                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+//                    trailingIcon = { Icon(Icons.Default.MoreVert, contentDescription = null) },
+//                    onQueryChange = onQueryChange,
+//                    modifier = Modifier,
+//                    enabled = true,
+//                )
+//            },
+//            expanded = expanded,
+//            onExpandedChange = onExpandedChange,
+//            content = content
+//        )
+//    }
+//}
+//
+//
 //TODO click to progress status
 @Composable
 fun SearchItem(
     searchItem: SearchResult,
     modifier: Modifier = Modifier,
-    imageModifier: Modifier = Modifier,
-    textModifier: Modifier = Modifier
+//    imageModifier: Modifier = Modifier,
+//    textModifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier
@@ -304,7 +285,7 @@ fun SearchItem(
                 model = searchItem.image,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = imageModifier
+                modifier = Modifier
                     .size(100.dp)
                     .aspectRatio(315f / 250f),
             )
@@ -312,7 +293,7 @@ fun SearchItem(
         GameInfoItem(
             modifier = if (searchItem.image != null) Modifier.padding(start = 16.dp) else Modifier,
             title = searchItem.title,
-            titleModifier = textModifier,
+            titleModifier = Modifier,
             description = searchItem.description,
             platforms = searchItem.platforms
         )
