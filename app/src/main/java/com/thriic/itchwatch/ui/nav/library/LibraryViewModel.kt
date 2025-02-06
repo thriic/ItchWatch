@@ -180,8 +180,9 @@ class LibraryViewModel @Inject constructor(
                 if(repository.size() > _items.value.size) {
                     Log.i("Lib ViewModel", "sync")
                     _items.value = repository.syncGameBasic()
-                    sort()
+
                 }
+                sort()
             }
 
             is LibraryIntent.Remove -> {
