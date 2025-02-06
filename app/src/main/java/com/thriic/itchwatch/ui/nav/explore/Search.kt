@@ -247,7 +247,7 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                         },
                         expanded = expanded,
                         onExpandedChange = { expanded = it },
-                        title = "search by tag",
+                        title = if(selectedTags.isEmpty()) "search by tag" else selectedTags.map { it.displayName }.joinToString("/"),
                         searchFieldHint = "select tag name",
                         searchFieldState = searchFieldState,
                         searchBarOffsetY = { searchBarOffsetY },
