@@ -393,6 +393,16 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel(), listState: LazyListS
                                     )
 
                                 }
+                            } else if(state.searchResults?.isEmpty() == true) {
+                                item {
+                                    Text(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp)
+                                            .wrapContentWidth(),
+                                        text = "None"
+                                    )
+                                }
                             }
                             if (state.searchLoading) {
                                 item {
