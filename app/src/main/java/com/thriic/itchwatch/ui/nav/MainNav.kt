@@ -3,6 +3,7 @@ package com.thriic.itchwatch.ui.nav
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
@@ -25,19 +26,16 @@ import com.thriic.itchwatch.ui.nav.library.LibraryScreen
 import com.thriic.itchwatch.ui.nav.library.LibraryViewModel
 import com.thriic.itchwatch.ui.nav.settings.SettingsViewModel
 import com.thriic.itchwatch.ui.nav.settings.SettingsScreen
-import com.thriic.itchwatch.utils.WatchLayout
 
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun AppNavHost(
     modifier: Modifier = Modifier,
-    layoutType: NavigationSuiteType,
-    layout: WatchLayout,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope
 ) {
     var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.EXPLORE) }
+    val searchListState = rememberLazyListState()
+    val libListState = rememberLazyListState()
 
     NavigationSuiteScaffold(
         navigationSuiteItems = {
@@ -55,13 +53,12 @@ fun AppNavHost(
                 )
             }
         },
-        layoutType = layoutType,
         modifier = modifier
     ){
         when (currentDestination) {
-            AppDestinations.EXPLORE -> SearchScreen(viewModel = hiltViewModel<ExploreViewModel>())
-            AppDestinations.LIBRARY -> LibraryScreen(layout,viewModel = hiltViewModel<LibraryViewModel>(), sharedTransitionScope = sharedTransitionScope, animatedContentScope =  animatedContentScope)
-            AppDestinations.IMPORT -> Import(layout,viewModel = hiltViewModel<ImportViewModel>())
+            AppDestinations.EXPLORE -> SearchScreen(viewModel = hiltViewModel<ExploreViewModel>(),searchListState)
+            AppDestinations.LIBRARY -> LibraryScreen(viewModel = hiltViewModel<LibraryViewModel>(),libListState)
+            AppDestinations.IMPORT -> Import(viewModel = hiltViewModel<ImportViewModel>())
             AppDestinations.Settings -> SettingsScreen(viewModel = hiltViewModel<SettingsViewModel>())
         }
     }

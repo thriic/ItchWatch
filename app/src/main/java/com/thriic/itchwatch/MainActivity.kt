@@ -20,7 +20,6 @@ import androidx.window.core.layout.WindowWidthSizeClass
 import com.thriic.itchwatch.ui.theme.ItchWatchTheme
 import com.thriic.itchwatch.ui.nav.AppNavHost
 import com.thriic.itchwatch.utils.DevicePreviews
-import com.thriic.itchwatch.utils.WatchLayout
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -33,69 +32,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ItchWatchTheme {
-                ItchWatchApp(navigator, currentWindowAdaptiveInfo().windowSizeClass)
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalSharedTransitionApi::class)
-@Composable
-fun ItchWatchApp(
-    navigator: Navigator,
-    windowSize: WindowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-) {
-    val layoutType = when (windowSize.windowWidthSizeClass) {
-        WindowWidthSizeClass.COMPACT -> NavigationSuiteType.NavigationBar
-        WindowWidthSizeClass.MEDIUM -> NavigationSuiteType.NavigationRail
-        WindowWidthSizeClass.EXPANDED -> NavigationSuiteType.NavigationRail
-        else -> NavigationSuiteType.NavigationBar
-    }
-    val layout = when (windowSize.windowWidthSizeClass) {
-        WindowWidthSizeClass.COMPACT -> WatchLayout.Compact
-        WindowWidthSizeClass.MEDIUM -> WatchLayout.Medium
-        WindowWidthSizeClass.EXPANDED -> WatchLayout.Expanded
-        else -> WatchLayout.Medium
-    }
-    SharedTransitionLayout {
-        val navController = rememberNavController()
-        navigator.setController(navController)
-        NavHost(
-            navController = navController,
-            startDestination = "nav"
-        ) {
-            composable("nav") {
                 AppNavHost(
-                    modifier = Modifier,
-                    layoutType = layoutType,
-                    layout = layout,
-                    sharedTransitionScope = this@SharedTransitionLayout,
-                    animatedContentScope = this@composable
+                    modifier = Modifier
                 )
             }
-            composable(
-                "detail?url={url}&id={id}",
-                arguments = listOf(
-                    navArgument("url") { type = NavType.StringType },
-                    navArgument("id") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val id =
-                    backStackEntry.arguments?.getString("id") ?: throw Exception("id is null")
-//                DetailScreen(
-//                    id = id,
-//                    animatedContentScope = this@composable,
-//                    sharedTransitionScope = this@SharedTransitionLayout,
-//                    viewModel = hiltViewModel<DetailViewModel>(backStackEntry)
-//                )
-            }
-            composable("tag") {
-            }
         }
     }
-}
-
-@DevicePreviews
-@Composable
-fun NavigationPreView() {
-    ItchWatchApp(Navigator())
 }

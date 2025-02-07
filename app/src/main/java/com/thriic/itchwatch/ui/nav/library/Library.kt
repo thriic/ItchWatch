@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -101,7 +102,6 @@ import com.thriic.itchwatch.ui.common.GameInfoItem
 import com.thriic.itchwatch.ui.common.PlatformRow
 import com.thriic.itchwatch.ui.common.SearchLayout
 import com.thriic.itchwatch.ui.detail.DetailScreen
-import com.thriic.itchwatch.utils.WatchLayout
 import com.thriic.itchwatch.utils.getId
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -272,13 +272,11 @@ fun ListDetailPane() {
 }
 
 
-@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3AdaptiveApi::class)
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun LibraryScreen(
-    layout: WatchLayout,
     viewModel: LibraryViewModel = viewModel(),
-    sharedTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope
+    listState: LazyListState = rememberLazyListState(),
 ) {
     viewModel.send(LibraryIntent.SyncRepository)
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -308,7 +306,6 @@ fun LibraryScreen(
 
     var selectedTags by remember { mutableStateOf(filterState.filterTags) }
 
-    val listState = rememberLazyListState()
 
 
     val navigator = rememberListDetailPaneScaffoldNavigator<String>()
@@ -492,9 +489,6 @@ fun LibraryScreen(
                             itemsIndexed(
                                 filterItems,
                                 key = { index, item -> index }) { index, item ->
-                                val scope = rememberCoroutineScope()
-                                val id = item.url.getId()
-                                with(sharedTransitionScope) {
                                     LibraryItem(
                                         gameBasic = item,
                                         modifier = itemModifier,
@@ -530,7 +524,7 @@ fun LibraryScreen(
 //                            .build()
                                     )
                                 }
-                            }
+
 
                         }
                     }
