@@ -3,10 +3,9 @@ package com.thriic.core.network.model
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.model.MetaData
 import com.fleeksoft.ksoup.nodes.Document
-import com.google.gson.Gson
 import com.thriic.core.network.NetworkException
 
-data class CollectionJSON(val page: Int, val content: String, val num_items: Int)
+data class ResponseJSON(val page: Int, val content: String, val num_items: Int)
 
 data class CollectionApiModel(
     val gameCells: List<GameCell>,

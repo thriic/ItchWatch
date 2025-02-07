@@ -36,7 +36,7 @@ class CollectionRepository @Inject constructor(
         return Result.failure(Exception("fetch collection returned empty"))
     }
 
-    suspend fun fetchLastPages(url: String): Result<List<GameCell>> {
+    private suspend fun fetchLastPages(url: String): Result<List<GameCell>> {
         val allGameCells = mutableListOf<GameCell>()
         var currentPage = 2
 

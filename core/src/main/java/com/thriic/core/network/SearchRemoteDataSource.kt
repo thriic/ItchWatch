@@ -1,9 +1,16 @@
 package com.thriic.core.network
 
+import android.util.Log
 import com.fleeksoft.ksoup.Ksoup
+import com.google.gson.Gson
 import com.thriic.core.model.SearchSortType
 import com.thriic.core.model.SearchTag
+import com.thriic.core.network.model.ResponseJSON
+import com.thriic.core.network.model.GameCell
 import com.thriic.core.network.model.SearchApiModel
+import com.thriic.core.network.model.SearchResult
+import com.thriic.core.network.model.getGameCells
+import com.thriic.core.network.model.getSearchResults
 import com.thriic.core.network.model.parseSearchTags
 import com.thriic.core.network.model.toSearchApiModel
 import kotlinx.coroutines.Dispatchers
@@ -65,6 +72,41 @@ class SearchRemoteDataSource @Inject constructor(private val client: OkHttpClien
                     if (!response.isSuccessful) throw IOException("Unexpected code $response")
                     val text = response.body?.string() ?: throw IOException()
                     Ksoup.parse(html = text).toSearchApiModel()
+                }
+            }
+        }.fold(
+            onSuccess = { Result.success(it) },
+            onFailure = { Result.failure(it) }
+        )
+    }
+
+
+    //tags must be sorted, otherwise response will be redirected
+    suspend fun fetchTagSearchJSON(tags:List<SearchTag>,sortType: SearchSortType = SearchSortType.Popular, page: Int = 2, classification:String = "games"): Result<List<SearchResult>> {
+        return runCatching {
+            var url = "https://itch.io/${classification}"
+            url += when(sortType){
+                SearchSortType.Popular -> ""
+                SearchSortType.NewAPopular -> "/new-and-popular"
+                SearchSortType.TopSellers -> "/top-sellers"
+                SearchSortType.TopRated -> "/top-rated"
+                SearchSortType.MostRecent -> "/newest"
+            }
+            tags.forEach {
+                url += "/${it.tagName}"
+            }
+            withContext(Dispatchers.IO) {
+                val request = Request.Builder()
+                    .url("$url?page=$page&format=json".also { println("fetch :$it") })
+                    .build()
+
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) throw IOException("Unexpected code $response")
+                    val text = response.body?.string() ?: throw IOException()
+//                    if(text.contains("html")&&text.contains("<meta charset=\"UTF-8\"/>"))
+//                        Ksoup.parse(html = text).toSearchApiModel().items
+//                    else
+                        Ksoup.parse(html = Gson().fromJson(text, ResponseJSON::class.java).content).getSearchResults()
                 }
             }
         }.fold(

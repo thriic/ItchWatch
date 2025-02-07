@@ -3,13 +3,10 @@ package com.thriic.core.network
 import com.fleeksoft.ksoup.Ksoup
 import com.google.gson.Gson
 import com.thriic.core.network.model.CollectionApiModel
-import com.thriic.core.network.model.CollectionJSON
-import com.thriic.core.network.model.DownloadUrl
-import com.thriic.core.network.model.GameApiModel
+import com.thriic.core.network.model.ResponseJSON
 import com.thriic.core.network.model.GameCell
 import com.thriic.core.network.model.getGameCells
 import com.thriic.core.network.model.toCollectionApiModel
-import com.thriic.core.network.model.toGameApiModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -53,7 +50,7 @@ class CollectionRemoteDataSource @Inject constructor(private val client: OkHttpC
                 client.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) throw IOException("Unexpected code $response")
                     val text = response.body?.string() ?: throw IOException()
-                    Ksoup.parse(html = Gson().fromJson(text, CollectionJSON::class.java).content).getGameCells()
+                    Ksoup.parse(html = Gson().fromJson(text, ResponseJSON::class.java).content).getGameCells()
                 }
             }
         }.fold(

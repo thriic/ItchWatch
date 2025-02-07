@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.thriic.core.local.UserPreferences
 import com.thriic.core.model.SearchSortType
 import com.thriic.core.model.SearchTag
+import com.thriic.core.model.resortByTagName
+import com.thriic.core.network.model.SearchResult
 import com.thriic.core.repository.GameRepository
 import com.thriic.core.repository.SearchRepository
 import com.thriic.itchwatch.ui.detail.DetailState
@@ -22,9 +24,10 @@ class ExploreViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
 ): ViewModel() {
 
-    private val _uiState = MutableStateFlow(ExploreUiState(
-        sortType = SearchSortType.Popular, searchLoading = false, detailLading = false,
-        allTags = listOf()))
+    var currentPage = 1
+    private val _uiState = MutableStateFlow(
+        ExploreUiState(sortType = SearchSortType.Popular, searchLoading = false, detailLading = false, allTags = listOf())
+    )
     val state: StateFlow<ExploreUiState>
         get() = _uiState
 
@@ -63,25 +66,49 @@ class ExploreViewModel @Inject constructor(
                 update(_uiState.value.copy(detailLading = true))
             }
             is ExploreIntent.SearchByKeyword -> {
-                update(_uiState.value.copy(searchLoading = true))
-                fetchKeywordSearch(intent.keyword)
-                    .onSuccess { update(_uiState.value.copy(searchApiModel = it)) }
-                    .onFailure { sendMessage(it.message) }
-                update(_uiState.value.copy(searchLoading = false))
+//                update(_uiState.value.copy(searchLoading = true))
+//                fetchKeywordSearch(intent.keyword)
+//                    .onSuccess { update(_uiState.value.copy(searchApiModel = it)) }
+//                    .onFailure { sendMessage(it.message) }
+//                update(_uiState.value.copy(searchLoading = false))
             }
             is ExploreIntent.SearchByTag -> {
                 if(!_uiState.value.searchLoading) {
-                    update(_uiState.value.copy(searchLoading = true))
+                    update(_uiState.value.copy(searchLoading = true, searchResults = null))
                     //when change search sort type
                     if(intent.sortType!=null && state.value.sortType != intent.sortType) {
                         update(_uiState.value.copy(sortType = intent.sortType))
                         userPreferences.saveSearchSortType(intent.sortType)//save to preferences
                     }
-                    searchRepository.fetchTagSearch(
-                        tags = intent.tags,
-                        sortType = state.value.sortType
+                    searchRepository.fetchTagSearchJSON(
+                        tags = intent.tags.resortByTagName(state.value.allTags),
+                        sortType = state.value.sortType,
+                        1
                     )
-                        .onSuccess { update(_uiState.value.copy(searchApiModel = it)) }
+                        .onSuccess { update(_uiState.value.copy(searchResults = it, canLoadMore = true)) }
+                        .onFailure { sendMessage(it.message) }
+                    currentPage = 1
+                    update(_uiState.value.copy(searchLoading = false))
+                }
+            }
+            is ExploreIntent.LoadMore -> {
+                if(!_uiState.value.searchLoading) {
+                    update(_uiState.value.copy(searchLoading = true))
+                    //when change search sort type
+                    searchRepository.fetchTagSearchJSON(
+                        tags = intent.tags.resortByTagName(state.value.allTags),
+                        sortType = state.value.sortType,
+                        currentPage + 1
+                    )
+                        .onSuccess {
+                            if(it.isEmpty() || state.value.searchResults?.containsAll(it) == true) {
+                                sendMessage("loaded all")
+                                update(_uiState.value.copy(canLoadMore = false))
+                            } else {
+                                update(_uiState.value.copy(searchResults = state.value.searchResults!! + it))
+                                currentPage += 1
+                            }
+                        }
                         .onFailure { sendMessage(it.message) }
                     update(_uiState.value.copy(searchLoading = false))
                 }
@@ -145,6 +172,7 @@ class ExploreViewModel @Inject constructor(
 sealed interface ExploreIntent {
     data class SearchByKeyword(val keyword: String = "") : ExploreIntent
     data class SearchByTag(val tags:List<SearchTag>, val sortType: SearchSortType? = null) : ExploreIntent
+    data class LoadMore(val tags:List<SearchTag>) : ExploreIntent
     data object AllTags : ExploreIntent
     data class ClickItem(val url: String, val callback: ()->Unit) : ExploreIntent
     data class Star(val url: String) : ExploreIntent

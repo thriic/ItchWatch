@@ -29,7 +29,9 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -73,6 +75,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -101,14 +104,16 @@ import com.thriic.itchwatch.ui.common.GameInfoItem
 import com.thriic.itchwatch.ui.common.PlatformRow
 import com.thriic.itchwatch.ui.common.SearchLayout
 import com.thriic.itchwatch.ui.detail.DetailScreen
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
 import kotlin.math.roundToInt
 
 @OptIn(
     ExperimentalMaterial3AdaptiveApi::class, ExperimentalSharedTransitionApi::class,
-    ExperimentalLayoutApi::class
+    ExperimentalLayoutApi::class, FlowPreview::class
 )
 @Composable
-fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
+fun SearchScreen(viewModel: ExploreViewModel = viewModel(), listState: LazyListState = rememberLazyListState()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val toastMsg by viewModel.toastMessage.collectAsState()
@@ -232,8 +237,8 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                     val suggestions =
                         (if (searchFieldState.text.isNotBlank()) state.allTags.filter { tag ->
                             tag.containsTag(searchFieldState.text)
-                        } else
-                            state.allTags).filter { !selectedTags.contains(it) }
+                        } else state.allTags)
+                            .filter { !selectedTags.contains(it) }
                     SearchLayout(
                         onApplySearch = { query ->
                             //auto filter if user had input any words and there is only one suggestion tag
@@ -350,34 +355,25 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
                             }
                         }
 
-                        if (state.searchLoading) {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                CircularProgressIndicator()
-                            }
-                        } else {
-                            val listState = rememberLazyListState()
-                            LazyColumn(
-                                contentPadding = contentPadding,
-                                state = listState,
-                                modifier = Modifier.nestedScroll(searchBarConnection),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
 
-                                val itemModifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp)
+                        LazyColumn(
+                            contentPadding = contentPadding,
+                            state = listState,
+                            modifier = Modifier.nestedScroll(searchBarConnection),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
 
-                                val imageModifier = Modifier
-                                    .sizeIn(maxHeight = 80.dp)
-                                    .aspectRatio(315f / 250f)
-                                    .clip(RoundedCornerShape(8.dp))
+                            val itemModifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
 
+                            val imageModifier = Modifier
+                                .sizeIn(maxHeight = 80.dp)
+                                .aspectRatio(315f / 250f)
+                                .clip(RoundedCornerShape(8.dp))
+                            if(!state.searchResults.isNullOrEmpty()) {
                                 itemsIndexed(
-                                    state.searchApiModel?.items ?: listOf(),
+                                    state.searchResults!!,
                                     key = { index, _ -> index }) { _, item ->
                                     SearchItem(
                                         searchItem = item,
@@ -398,9 +394,29 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel()) {
 
                                 }
                             }
-
+                            if (state.searchLoading) {
+                                item {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp)
+                                            .wrapContentWidth()
+                                    )
+                                }
+                            }
                         }
+                        LaunchedEffect(listState) {
+                            snapshotFlow { listState.isScrolledToEnd(buffer = 3) }
+                                .debounce(200)
+                                .collect { isNearEnd ->
+                                    if (isNearEnd && state.canLoadMore && !state.searchLoading) {
+                                        viewModel.send(ExploreIntent.LoadMore(selectedTags))
+                                    }
+                                }
+                        }
+
                     }
+
                 }
             },
             detailPane = {
@@ -479,7 +495,7 @@ fun SearchItem(
                 ) {
                     val content =
                         if (sortType == SearchSortType.TopRated)
-                            "%.2f".format(searchItem.rating!!.ratingPercent!! * 5 / 100) + "(${searchItem.rating!!.ratingCount})"
+                            searchItem.rating!!.ratingValue + "(${searchItem.rating!!.ratingCount})"
                         else if (sortType == SearchSortType.TopSellers) {
                             searchItem.price
                         } else {
@@ -513,6 +529,18 @@ fun SearchItem(
             }
         }
 
+    }
+}
+
+fun LazyListState.isScrolledToEnd(buffer: Int = 2): Boolean {
+    val layoutInfo = this.layoutInfo
+    val totalItems = layoutInfo.totalItemsCount
+    val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()
+
+    return if (lastVisibleItem == null) {
+        false
+    } else {
+        lastVisibleItem.index >= totalItems - buffer
     }
 }
 

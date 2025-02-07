@@ -5,6 +5,7 @@ import com.thriic.core.model.SearchSortType
 import com.thriic.core.model.SearchTag
 import com.thriic.core.network.SearchRemoteDataSource
 import com.thriic.core.network.model.SearchApiModel
+import com.thriic.core.network.model.SearchResult
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,8 +17,11 @@ class SearchRepository @Inject constructor(
     suspend fun fetchKeywordSearch(keyword:String, classification:String = "game") =
         searchRemoteDataSource.fetchKeywordSearch(keyword, classification)
 
-    suspend fun fetchTagSearch(tags:List<SearchTag>, sortType: SearchSortType = SearchSortType.Popular): Result<SearchApiModel> {
+    suspend fun fetchTagSearchPage(tags:List<SearchTag>, sortType: SearchSortType = SearchSortType.Popular): Result<SearchApiModel> {
         return searchRemoteDataSource.fetchTagSearch(tags, sortType)
+    }
+    suspend fun fetchTagSearchJSON(tags:List<SearchTag>, sortType: SearchSortType = SearchSortType.Popular, page:Int): Result<List<SearchResult>> {
+        return searchRemoteDataSource.fetchTagSearchJSON(tags, sortType, page)
     }
 
     suspend fun fetchAllTags(): List<SearchTag> {
@@ -30,5 +34,6 @@ class SearchRepository @Inject constructor(
             tagLocalDataSource.getAllSearchTag()
         }
     }
+
 
 }
