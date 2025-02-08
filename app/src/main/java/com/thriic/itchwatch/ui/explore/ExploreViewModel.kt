@@ -1,4 +1,4 @@
-package com.thriic.itchwatch.ui.nav.explore
+package com.thriic.itchwatch.ui.explore
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -171,7 +171,8 @@ class ExploreViewModel @Inject constructor(
 
 sealed interface ExploreIntent {
     data class SearchByKeyword(val keyword: String = "") : ExploreIntent
-    data class SearchByTag(val tags:List<SearchTag>, val sortType: SearchSortType? = null) : ExploreIntent
+    data class SearchByTag(val tags:List<SearchTag>, val sortType: SearchSortType? = null) :
+        ExploreIntent
     data class LoadMore(val tags:List<SearchTag>) : ExploreIntent
     data object AllTags : ExploreIntent
     data class ClickItem(val url: String, val callback: ()->Unit) : ExploreIntent

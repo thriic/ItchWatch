@@ -66,8 +66,8 @@ import com.thriic.core.model.getContentLinks
 import com.thriic.core.network.model.DevLogItem
 import com.thriic.itchwatch.R
 import com.thriic.itchwatch.ui.common.PlatformIcon
-import com.thriic.itchwatch.ui.nav.library.LibraryIntent
-import com.thriic.itchwatch.ui.nav.library.LibraryViewModel
+import com.thriic.itchwatch.ui.library.LibraryIntent
+import com.thriic.itchwatch.ui.library.LibraryViewModel
 import com.thriic.itchwatch.utils.Href
 import com.thriic.itchwatch.utils.getHref
 import com.thriic.itchwatch.utils.phraseSocialUrl

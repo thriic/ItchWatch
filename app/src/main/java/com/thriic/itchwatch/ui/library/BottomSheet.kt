@@ -1,4 +1,4 @@
-package com.thriic.itchwatch.ui.nav.library
+package com.thriic.itchwatch.ui.library
 
 import android.annotation.SuppressLint
 import android.util.Log

@@ -1,4 +1,4 @@
-package com.thriic.itchwatch.ui.nav.imports
+package com.thriic.itchwatch.ui.imports
 
 import android.content.Intent
 import android.net.Uri
@@ -48,6 +48,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.thriic.itchwatch.ui.AppDestinations
 import com.thriic.itchwatch.utils.cleanUrl
 import com.thriic.itchwatch.utils.isCollectionUrl
 import com.thriic.itchwatch.utils.isGamePageUrl
@@ -55,7 +56,7 @@ import com.thriic.itchwatch.utils.readTextFile
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Import(viewModel: ImportViewModel = viewModel()) {
+fun Import(viewModel: ImportViewModel = viewModel(), navigator: ((AppDestinations) -> Unit)? = null) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     Scaffold(
         topBar = {

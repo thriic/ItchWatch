@@ -1,4 +1,4 @@
-package com.thriic.itchwatch.ui.nav.explore
+package com.thriic.itchwatch.ui.explore
 
 import android.util.Log
 import android.widget.Toast
@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -44,14 +43,11 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -72,7 +68,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -81,29 +76,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.thriic.core.formatTimeDifference
 import com.thriic.core.model.SearchSortType
 import com.thriic.core.model.SearchTag
 import com.thriic.core.model.containsTag
 import com.thriic.core.network.model.SearchResult
-import com.thriic.itchwatch.R
 import com.thriic.itchwatch.ui.common.GameInfoItem
 import com.thriic.itchwatch.ui.common.PlatformRow
 import com.thriic.itchwatch.ui.common.SearchLayout
 import com.thriic.itchwatch.ui.detail.DetailScreen
+import com.thriic.itchwatch.ui.AppDestinations
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlin.math.roundToInt
@@ -113,7 +105,7 @@ import kotlin.math.roundToInt
     ExperimentalLayoutApi::class, FlowPreview::class
 )
 @Composable
-fun SearchScreen(viewModel: ExploreViewModel = viewModel(), listState: LazyListState = rememberLazyListState()) {
+fun SearchScreen(viewModel: ExploreViewModel = viewModel(), listState: LazyListState = rememberLazyListState(), navigator: ((AppDestinations) -> Unit)? = null) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val toastMsg by viewModel.toastMessage.collectAsState()
@@ -151,7 +143,12 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel(), listState: LazyListS
                 DropdownMenuItem(
                     text = { Text("Popular") },
                     onClick = {
-                        viewModel.send(ExploreIntent.SearchByTag(selectedTags, SearchSortType.Popular))
+                        viewModel.send(
+                            ExploreIntent.SearchByTag(
+                                selectedTags,
+                                SearchSortType.Popular
+                            )
+                        )
                     },
                     trailingIcon = {
                         if (state.sortType == SearchSortType.Popular) Icon(
@@ -163,7 +160,12 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel(), listState: LazyListS
                 DropdownMenuItem(
                     text = { Text("Top Rated") },
                     onClick = {
-                        viewModel.send(ExploreIntent.SearchByTag(selectedTags, SearchSortType.TopRated))
+                        viewModel.send(
+                            ExploreIntent.SearchByTag(
+                                selectedTags,
+                                SearchSortType.TopRated
+                            )
+                        )
                     },
                     trailingIcon = {
                         if (state.sortType == SearchSortType.TopRated) Icon(
@@ -175,7 +177,12 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel(), listState: LazyListS
                 DropdownMenuItem(
                     text = { Text("Top Sellers") },
                     onClick = {
-                        viewModel.send(ExploreIntent.SearchByTag(selectedTags, SearchSortType.TopSellers))
+                        viewModel.send(
+                            ExploreIntent.SearchByTag(
+                                selectedTags,
+                                SearchSortType.TopSellers
+                            )
+                        )
                     },
                     trailingIcon = {
                         if (state.sortType == SearchSortType.TopSellers) Icon(
@@ -187,7 +194,12 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel(), listState: LazyListS
                 DropdownMenuItem(
                     text = { Text("Most Recent") },
                     onClick = {
-                        viewModel.send(ExploreIntent.SearchByTag(selectedTags, SearchSortType.MostRecent))
+                        viewModel.send(
+                            ExploreIntent.SearchByTag(
+                                selectedTags,
+                                SearchSortType.MostRecent
+                            )
+                        )
                     },
                     trailingIcon = {
                         if (state.sortType == SearchSortType.MostRecent) Icon(

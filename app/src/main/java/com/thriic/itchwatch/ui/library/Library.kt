@@ -1,11 +1,8 @@
-package com.thriic.itchwatch.ui.nav.library
+package com.thriic.itchwatch.ui.library
 
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -94,6 +91,7 @@ import com.thriic.core.model.GameBasic
 import com.thriic.core.model.LocalInfo
 import com.thriic.core.model.Platform
 import com.thriic.core.model.FilterTag
+import com.thriic.core.model.SearchTag
 import com.thriic.core.model.SortType
 import com.thriic.core.model.TagType
 import com.thriic.core.network.model.DevLogItem
@@ -102,7 +100,7 @@ import com.thriic.itchwatch.ui.common.GameInfoItem
 import com.thriic.itchwatch.ui.common.PlatformRow
 import com.thriic.itchwatch.ui.common.SearchLayout
 import com.thriic.itchwatch.ui.detail.DetailScreen
-import com.thriic.itchwatch.utils.getId
+import com.thriic.itchwatch.ui.AppDestinations
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import kotlin.math.roundToInt
@@ -265,18 +263,13 @@ fun ChipFlowRow(
 
 }
 
-@Composable
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
-fun ListDetailPane() {
-
-}
-
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun LibraryScreen(
     viewModel: LibraryViewModel = viewModel(),
     listState: LazyListState = rememberLazyListState(),
+    navigator: ((AppDestinations, List<SearchTag>) -> Unit)? = null
 ) {
     viewModel.send(LibraryIntent.SyncRepository)
     val state by viewModel.state.collectAsStateWithLifecycle()

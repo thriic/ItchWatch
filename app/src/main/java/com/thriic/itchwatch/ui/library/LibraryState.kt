@@ -1,4 +1,4 @@
-package com.thriic.itchwatch.ui.nav.library
+package com.thriic.itchwatch.ui.library
 
 import com.thriic.core.model.Game
 import com.thriic.core.model.LocalInfo

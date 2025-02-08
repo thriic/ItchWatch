@@ -1,13 +1,10 @@
-package com.thriic.itchwatch.ui.nav
+package com.thriic.itchwatch.ui
 
-import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,14 +15,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.thriic.itchwatch.R
-import com.thriic.itchwatch.ui.nav.imports.Import
-import com.thriic.itchwatch.ui.nav.imports.ImportViewModel
-import com.thriic.itchwatch.ui.nav.explore.ExploreViewModel
-import com.thriic.itchwatch.ui.nav.explore.SearchScreen
-import com.thriic.itchwatch.ui.nav.library.LibraryScreen
-import com.thriic.itchwatch.ui.nav.library.LibraryViewModel
-import com.thriic.itchwatch.ui.nav.settings.SettingsViewModel
-import com.thriic.itchwatch.ui.nav.settings.SettingsScreen
+import com.thriic.itchwatch.ui.imports.Import
+import com.thriic.itchwatch.ui.imports.ImportViewModel
+import com.thriic.itchwatch.ui.explore.ExploreViewModel
+import com.thriic.itchwatch.ui.explore.SearchScreen
+import com.thriic.itchwatch.ui.library.LibraryScreen
+import com.thriic.itchwatch.ui.library.LibraryViewModel
+import com.thriic.itchwatch.ui.settings.SettingsViewModel
+import com.thriic.itchwatch.ui.settings.SettingsScreen
 
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -56,9 +53,15 @@ fun AppNavHost(
         modifier = modifier
     ){
         when (currentDestination) {
-            AppDestinations.EXPLORE -> SearchScreen(viewModel = hiltViewModel<ExploreViewModel>(),searchListState)
-            AppDestinations.LIBRARY -> LibraryScreen(viewModel = hiltViewModel<LibraryViewModel>(),libListState)
-            AppDestinations.IMPORT -> Import(viewModel = hiltViewModel<ImportViewModel>())
+            AppDestinations.EXPLORE -> SearchScreen(viewModel = hiltViewModel<ExploreViewModel>(),searchListState){
+                currentDestination = it
+            }
+            AppDestinations.LIBRARY -> LibraryScreen(viewModel = hiltViewModel<LibraryViewModel>(),libListState){ destination, tags ->
+                currentDestination = destination
+            }
+            AppDestinations.IMPORT -> Import(viewModel = hiltViewModel<ImportViewModel>()){
+                currentDestination = it
+            }
             AppDestinations.Settings -> SettingsScreen(viewModel = hiltViewModel<SettingsViewModel>())
         }
     }

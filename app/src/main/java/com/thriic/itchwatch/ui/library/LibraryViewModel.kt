@@ -1,4 +1,4 @@
-package com.thriic.itchwatch.ui.nav.library
+package com.thriic.itchwatch.ui.library
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -27,10 +27,12 @@ class LibraryViewModel @Inject constructor(
     private val _items = MutableStateFlow<List<GameBasic>>(emptyList())
     val items: StateFlow<List<GameBasic>> = _items
 
-    private val _uiState = MutableStateFlow(LibraryUiState(
+    private val _uiState = MutableStateFlow(
+        LibraryUiState(
         setOf(SortType.Name), null,
         loading = false
-    ))
+    )
+    )
     val state: StateFlow<LibraryUiState>
         get() = _uiState
 

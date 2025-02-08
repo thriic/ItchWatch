@@ -1,4 +1,4 @@
-package com.thriic.itchwatch.ui.nav.settings
+package com.thriic.itchwatch.ui.settings
 
 import android.content.Intent
 import android.net.Uri

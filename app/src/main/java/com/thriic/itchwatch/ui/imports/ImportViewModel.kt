@@ -1,4 +1,4 @@
-package com.thriic.itchwatch.ui.nav.imports
+package com.thriic.itchwatch.ui.imports
 
 import android.util.Log
 import androidx.lifecycle.ViewModel

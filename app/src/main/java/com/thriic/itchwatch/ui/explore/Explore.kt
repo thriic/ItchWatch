@@ -1,4 +1,4 @@
-package com.thriic.itchwatch.ui.nav.explore
+package com.thriic.itchwatch.ui.explore
 //
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row

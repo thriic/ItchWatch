@@ -1,4 +1,4 @@
-package com.thriic.itchwatch.ui.nav.explore
+package com.thriic.itchwatch.ui.explore
 
 import com.thriic.core.model.SearchSortType
 import com.thriic.core.model.SearchTag

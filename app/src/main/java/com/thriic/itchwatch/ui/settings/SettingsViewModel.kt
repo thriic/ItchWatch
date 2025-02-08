@@ -1,4 +1,4 @@
-package com.thriic.itchwatch.ui.nav.settings
+package com.thriic.itchwatch.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
