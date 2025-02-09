@@ -2,6 +2,7 @@ package com.thriic.itchwatch.ui.explore
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.thriic.core.TimeFormat
 import com.thriic.core.local.UserPreferences
 import com.thriic.core.model.SearchSortType
 import com.thriic.core.model.SearchTag
@@ -26,7 +27,7 @@ class ExploreViewModel @Inject constructor(
 
     var currentPage = 1
     private val _uiState = MutableStateFlow(
-        ExploreUiState(sortType = SearchSortType.Popular, searchLoading = false, detailLading = false, allTags = listOf())
+        ExploreUiState(sortType = SearchSortType.Popular, searchLoading = false, detailLading = false, allTags = listOf(), timeFormat = TimeFormat.DetailedRelative)
     )
     val state: StateFlow<ExploreUiState>
         get() = _uiState
@@ -47,6 +48,9 @@ class ExploreViewModel @Inject constructor(
     init {
         //load user preferences
         viewModelScope.launch {
+            userPreferences.timeFormatFlow.collect {
+                update(_uiState.value.copy(timeFormat = it))
+            }
             userPreferences.searchSortTypeFlow.collect {
                 update(_uiState.value.copy(sortType = it))
             }

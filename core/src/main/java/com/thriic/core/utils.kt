@@ -16,6 +16,11 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
+enum class TimeFormat {
+    AbsoluteDate, //yyyy/MM/dd
+    SimpleRelative, //x days ago
+    DetailedRelative //x years/months/days/minutes ago
+}
 
 fun String.toLocalDateTime(rfcFormat:Boolean = false): LocalDateTime {
     val formatter = if(rfcFormat) DateTimeFormatter.RFC_1123_DATE_TIME else DateTimeFormatter.ofPattern("dd MMMM yyyy @ HH:mm 'UTC'")
@@ -29,17 +34,41 @@ fun String.toLocalDateTime(rfcFormat:Boolean = false): LocalDateTime {
 }
 
 
-fun LocalDateTime.formatTime(): String {
+fun LocalDateTime.formatTime(timeFormat: TimeFormat = TimeFormat.DetailedRelative): String {
     val now = LocalDateTime.now()
-    val daysDifference = ChronoUnit.DAYS.between(this.toLocalDate(), now.toLocalDate()).toInt()
+    return when(timeFormat) {
+        TimeFormat.AbsoluteDate -> {
+            val daysDifference =
+                ChronoUnit.DAYS.between(this.toLocalDate(), now.toLocalDate()).toInt()
 
-    val formatter: DateTimeFormatter = when {
-        daysDifference < 1 -> DateTimeFormatter.ofPattern("HH:mm")
-        daysDifference < 365 -> DateTimeFormatter.ofPattern("MM:dd")
-        else -> DateTimeFormatter.ofPattern("yyyy:MM:dd")
+            val formatter: DateTimeFormatter = when {
+                daysDifference < 1 -> DateTimeFormatter.ofPattern("HH:mm")
+                else -> DateTimeFormatter.ofPattern("yyyy/MM/dd")
+            }
+
+            this.format(formatter)
+        }
+        TimeFormat.DetailedRelative -> {
+            val minutesDifference = ChronoUnit.MINUTES.between(this, now)
+            val hoursDifference = ChronoUnit.HOURS.between(this, now)
+            val daysDifference = ChronoUnit.DAYS.between(this, now)
+            val monthsDifference = ChronoUnit.MONTHS.between(this, now)
+            val yearsDifference = ChronoUnit.YEARS.between(this, now)
+            when {
+                hoursDifference < 1 -> "$minutesDifference minutes ago"
+                daysDifference < 1 -> "$hoursDifference hours ago"
+                monthsDifference < 1 -> "$daysDifference days ago"
+                yearsDifference < 1 -> "$monthsDifference months ago"
+                else -> "$yearsDifference years ago"
+            }
+        }
+
+        TimeFormat.SimpleRelative -> {
+            val daysDifference =
+                ChronoUnit.DAYS.between(this.toLocalDate(), now.toLocalDate()).toInt()
+            "$daysDifference days ago"
+        }
     }
-
-    return this.format(formatter)
 }
 
 fun LocalDateTime.formatTimeDifference(): String {

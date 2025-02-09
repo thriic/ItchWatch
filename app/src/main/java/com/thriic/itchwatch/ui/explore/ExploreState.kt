@@ -1,5 +1,6 @@
 package com.thriic.itchwatch.ui.explore
 
+import com.thriic.core.TimeFormat
 import com.thriic.core.model.SearchSortType
 import com.thriic.core.model.SearchTag
 import com.thriic.core.network.model.SearchApiModel
@@ -11,5 +12,6 @@ data class ExploreUiState(
     val detailLading: Boolean,
     val searchResults: List<SearchResult>? = null,
     val canLoadMore: Boolean = true,
-    val allTags: List<SearchTag>
+    val allTags: List<SearchTag>,
+    val timeFormat: TimeFormat
 )

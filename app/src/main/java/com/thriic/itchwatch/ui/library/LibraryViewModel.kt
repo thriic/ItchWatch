@@ -3,6 +3,8 @@ package com.thriic.itchwatch.ui.library
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.thriic.core.TimeFormat
 import com.thriic.core.local.UserPreferences
 import com.thriic.core.model.GameBasic
 import com.thriic.core.model.FilterTag
@@ -29,9 +31,10 @@ class LibraryViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(
         LibraryUiState(
-        setOf(SortType.Name), null,
-        loading = false
-    )
+            setOf(SortType.Name), null,
+            loading = false,
+            timeFormat = TimeFormat.DetailedRelative
+        )
     )
     val state: StateFlow<LibraryUiState>
         get() = _uiState
@@ -40,7 +43,7 @@ class LibraryViewModel @Inject constructor(
     val filterState: StateFlow<FilterState>
         get() = _filterState
 
-    private val _detailState = MutableStateFlow(DetailState(null,null))
+    private val _detailState = MutableStateFlow(DetailState(null, null))
     val detailState: StateFlow<DetailState>
         get() = _detailState
 
@@ -101,7 +104,10 @@ class LibraryViewModel @Inject constructor(
             is LibraryIntent.ClickItem -> {
                 Log.i("Lib ViewModel", "ClickItem: ${intent.url}")
                 //navigator.navigate("detail?url=${intent.url.encodeUrl()}&id=${intent.id}")
-                _detailState.value = DetailState(repository.getGameFull(intent.url),repository.getLocalInfo(intent.url))
+                _detailState.value = DetailState(
+                    repository.getGameFull(intent.url),
+                    repository.getLocalInfo(intent.url)
+                )
                 intent.callback()
             }
 
@@ -153,13 +159,16 @@ class LibraryViewModel @Inject constructor(
                         newSet.remove(SortType.Name)
                         newSet.add(SortType.TimeReverse)
                     }
+
                     intent.sortType == SortType.Name -> {
                         newSet.remove(SortType.TimeReverse)
                         newSet.add(SortType.Name)
                     }
+
                     _uiState.value.sortTypes.contains(intent.sortType) -> {
                         newSet.remove(intent.sortType)
                     }
+
                     else -> {
                         newSet.add(intent.sortType)
                     }
@@ -170,16 +179,16 @@ class LibraryViewModel @Inject constructor(
             }
 
             is LibraryIntent.UpdateFilter -> {
-                if (intent.keyword != null){
+                if (intent.keyword != null) {
                     _filterState.emit(_filterState.value.copy(keyword = intent.keyword))
                 }
-                if (intent.filterTags != null){
+                if (intent.filterTags != null) {
                     _filterState.emit(_filterState.value.copy(filterTags = intent.filterTags))
                 }
             }
 
             LibraryIntent.SyncRepository -> {
-                if(repository.size() > _items.value.size) {
+                if (repository.size() > _items.value.size) {
                     Log.i("Lib ViewModel", "sync")
                     _items.value = repository.syncGameBasic()
 
@@ -202,29 +211,38 @@ class LibraryViewModel @Inject constructor(
 
             is LibraryIntent.Mark -> {
                 val gameBasic = _items.value.firstOrNull { it.url == intent.url }
-                if(gameBasic == null) throw Exception("cannot find the specified game")
-                val updatedLocalInfo = repository.updateLocalInfo(url = intent.url, lastPlayedTime = LocalDateTime.now(), lastPlayedVersion = gameBasic.versionOrFileName)
+                if (gameBasic == null) throw Exception("cannot find the specified game")
+                val updatedLocalInfo = repository.updateLocalInfo(
+                    url = intent.url,
+                    lastPlayedTime = LocalDateTime.now(),
+                    lastPlayedVersion = gameBasic.versionOrFileName
+                )
                 _items.value =
                     _items.value.map { if (it.url == intent.url) gameBasic.copy(localInfo = updatedLocalInfo) else it }
-                if(_detailState.value.game?.url == intent.url) _detailState.value = _detailState.value.copy(localInfo = updatedLocalInfo)
+                if (_detailState.value.game?.url == intent.url) _detailState.value =
+                    _detailState.value.copy(localInfo = updatedLocalInfo)
                 sort()
                 sendMessage("marked")
             }
 
             is LibraryIntent.Star -> {
                 val gameBasic = _items.value.firstOrNull { it.url == intent.url }
-                if(gameBasic == null) throw Exception("cannot find the specified game")
-                val updatedLocalInfo = repository.updateLocalInfo(url = intent.url, starred = !gameBasic.localInfo.starred)
+                if (gameBasic == null) throw Exception("cannot find the specified game")
+                val updatedLocalInfo = repository.updateLocalInfo(
+                    url = intent.url,
+                    starred = !gameBasic.localInfo.starred
+                )
                 _items.value =
                     _items.value.map { if (it.url == intent.url) gameBasic.copy(localInfo = updatedLocalInfo) else it }
-                if(_detailState.value.game?.url == intent.url) _detailState.value = _detailState.value.copy(localInfo = updatedLocalInfo)
+                if (_detailState.value.game?.url == intent.url) _detailState.value =
+                    _detailState.value.copy(localInfo = updatedLocalInfo)
                 sort()
-                sendMessage(if(gameBasic.localInfo.starred) "unstarred" else "starred")
+                sendMessage(if (gameBasic.localInfo.starred) "unstarred" else "starred")
             }
         }
     }
 
-    private fun sort(sortTypes: Set<SortType> = _uiState.value.sortTypes){
+    private fun sort(sortTypes: Set<SortType> = _uiState.value.sortTypes) {
         //Log.i("Lib ViewModel", sortTypes.toString())
         fun getEffectiveTime(game: GameBasic): LocalDateTime {
             return when {
@@ -287,18 +305,24 @@ class LibraryViewModel @Inject constructor(
                 update(_uiState.value.copy(sortTypes = it))
             }
         }
+        viewModelScope.launch {
+            userPreferences.timeFormatFlow.collect {
+                update(_uiState.value.copy(timeFormat = it))
+            }
+        }
     }
 }
 
 sealed interface LibraryIntent {
     //data class AddGame(val url: String) : LibraryIntent
     data object Refresh : LibraryIntent
-    data class ClickItem(val url: String, val callback: ()->Unit) : LibraryIntent
-    data class Remove(val url: String, val callback: ()->Unit) : LibraryIntent
+    data class ClickItem(val url: String, val callback: () -> Unit) : LibraryIntent
+    data class Remove(val url: String, val callback: () -> Unit) : LibraryIntent
     data class Star(val url: String) : LibraryIntent
     data class Mark(val url: String) : LibraryIntent
+
     //data class AddGames(val text: String) : LibraryIntent
     data class Sort(val sortType: SortType) : LibraryIntent
-    data class UpdateFilter(val keyword:String?, val filterTags: Set<FilterTag>?): LibraryIntent
+    data class UpdateFilter(val keyword: String?, val filterTags: Set<FilterTag>?) : LibraryIntent
     data object SyncRepository : LibraryIntent
 }

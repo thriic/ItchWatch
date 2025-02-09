@@ -86,6 +86,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.thriic.core.TimeFormat
+import com.thriic.core.formatTime
 import com.thriic.core.formatTimeDifference
 import com.thriic.core.model.GameBasic
 import com.thriic.core.model.LocalInfo
@@ -508,7 +510,8 @@ fun LibraryScreen(
 //                                        sharedTransitionScope.rememberSharedContentState(key = "text-$id"),
 //                                        animatedVisibilityScope = animatedContentScope,
 //                                    ),
-                                        showStar = SortType.Starred in state.sortTypes
+                                        showStar = SortType.Starred in state.sortTypes,
+                                        timFormat = state.timeFormat
 //                        image = ImageRequest.Builder(LocalContext.current)
 //                            .data(item.image)
 //                            .crossfade(true)
@@ -537,7 +540,8 @@ fun LibraryScreen(
                             localInfo = localInfo,
                             onChangeStarred = { url ->
                                 viewModel.send(LibraryIntent.Star(url))
-                            }
+                            },
+                            timeFormat = state.timeFormat
                         )
                     }
                 }
@@ -576,7 +580,8 @@ fun LibraryItem(
         .size(100.dp)
         .clip(RoundedCornerShape(8.dp)),
     textModifier: Modifier = Modifier,
-    showStar: Boolean = false
+    showStar: Boolean = false,
+    timFormat: TimeFormat
 ) {
     Card(
         modifier = modifier
@@ -621,11 +626,11 @@ fun LibraryItem(
             ) {
                 PlatformRow(gameBasic.platforms.toList())
                 val textBox = if (gameBasic.updatedTime != null)
-                    "Last Updated·${gameBasic.updatedTime!!.formatTimeDifference()}"
+                    "Last Updated·${gameBasic.updatedTime!!.formatTime(timFormat)}"
                 else if (!gameBasic.devLogs.isNullOrEmpty())
-                    "Last DevLog·${gameBasic.devLogs!![0].pubDate.formatTimeDifference()}"
+                    "Last DevLog·${gameBasic.devLogs!![0].pubDate.formatTime(timFormat)}"
                 else if (gameBasic.publishedTime != null)
-                    "Published·${gameBasic.publishedTime!!.formatTimeDifference()}"
+                    "Published·${gameBasic.publishedTime!!.formatTime(timFormat)}"
                 else
                     ""
                 Row(

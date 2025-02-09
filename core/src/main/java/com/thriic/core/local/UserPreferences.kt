@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.thriic.core.TimeFormat
 import com.thriic.core.model.SearchSortType
 import com.thriic.core.model.SortType
 import kotlinx.coroutines.flow.Flow
@@ -50,20 +51,36 @@ class UserPreferences @Inject constructor(private val context:Context) {
             }
         }
 
-
-    suspend fun saveTimeFormat(value: Boolean) {
+    suspend fun saveTimeFormat(type: TimeFormat) {
         context.dataStore.edit { preferences ->
-            preferences[PreferencesKeys.SETTING_TIME_FORMAT] = value
+            preferences[PreferencesKeys.SETTING_TIME_FORMAT] = type.name
         }
     }
-    val timeFormatFlow: Flow<Boolean> = context.dataStore.data
+    val timeFormatFlow: Flow<TimeFormat> = context.dataStore.data
         .map { preferences ->
-            preferences[PreferencesKeys.SETTING_TIME_FORMAT] ?: false
+            try {
+                preferences[PreferencesKeys.SETTING_TIME_FORMAT]?.let {
+                    TimeFormat.valueOf(it)
+                } ?: TimeFormat.DetailedRelative
+            } catch (e: IllegalArgumentException) {
+                TimeFormat.DetailedRelative
+            }
+        }
+
+    suspend fun saveSearchType(value: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.SETTING_SEARCH_TYPE] = value
+        }
+    }
+    val searchTypeFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.SETTING_SEARCH_TYPE] ?: false
         }
 }
 
 object PreferencesKeys {
     val SORT_TYPES = stringSetPreferencesKey("sort_types")
     val SEARCH_SORT_TYPE = stringPreferencesKey("search_sort_type")
-    val SETTING_TIME_FORMAT = booleanPreferencesKey("time_format")
+    val SETTING_TIME_FORMAT = stringPreferencesKey("time_format")
+    val SETTING_SEARCH_TYPE = booleanPreferencesKey("search_type")
 }

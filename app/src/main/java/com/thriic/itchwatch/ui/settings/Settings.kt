@@ -1,5 +1,6 @@
 package com.thriic.itchwatch.ui.settings
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.provider.MediaStore
@@ -18,6 +19,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -34,13 +36,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.thriic.core.TimeFormat
+import com.thriic.itchwatch.ui.common.IconSwitch
 import com.thriic.itchwatch.utils.readTextFile
 import com.thriic.itchwatch.utils.share
 
+@SuppressLint("SuspiciousIndentation")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel) {
-    val uiState by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsState()
 
     val context = LocalContext.current
     val toastMsg by viewModel.toastMessage.collectAsState()
@@ -95,6 +100,54 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 }
 
                 item {
+                    SettingSubTitle("time format")
+                    SettingItem(
+                        modifier = Modifier.clickable { openDialog = true },
+                        title = "Absolute",
+                        description = "2024/5/29"
+                    ) {
+                        IconSwitch(
+                            checked = state.timeFormat == TimeFormat.AbsoluteDate,
+                            onCheckedChange = {
+                                viewModel.send(SettingsIntent.ChangeTimeFormat(TimeFormat.AbsoluteDate))
+                            },
+                            modifier = it
+                        )
+                    }
+                    SettingItem(
+                        modifier = Modifier.clickable { openDialog = true },
+                        title = "Relative",
+                        description = "x days ago"
+                    ) {
+                        IconSwitch(
+                            checked = state.timeFormat == TimeFormat.SimpleRelative,
+                            onCheckedChange = {
+                                viewModel.send(SettingsIntent.ChangeTimeFormat(TimeFormat.SimpleRelative))
+                            },
+                            modifier = it
+                        )
+                    }
+                    SettingItem(
+                        modifier = Modifier.clickable { openDialog = true },
+                        title = "Detailed Relative",
+                        description = "x years/months/days/minutes ago"
+                    ) {
+                        IconSwitch(
+                            checked = state.timeFormat == TimeFormat.DetailedRelative,
+                            onCheckedChange = {
+                                viewModel.send(SettingsIntent.ChangeTimeFormat(TimeFormat.DetailedRelative))
+                            },
+                            modifier = it
+                        )
+                    }
+                    HorizontalDivider(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
+                    )
+                }
+
+                item {
 
                     SettingSubTitle("im/export")
                     SettingItem(
@@ -124,8 +177,8 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                                 val content =
                                     contentResolver.openInputStream(pickedFileUri!!)
                                         ?.readTextFile()
-                                if(content!=null)
-                                viewModel.send(SettingsIntent.Import(content))
+                                if (content != null)
+                                    viewModel.send(SettingsIntent.Import(content))
                             }
 
                         }

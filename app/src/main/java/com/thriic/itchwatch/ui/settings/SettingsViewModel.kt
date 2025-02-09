@@ -2,6 +2,7 @@ package com.thriic.itchwatch.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.thriic.core.TimeFormat
 import com.thriic.core.local.GameLocalDataSource
 import com.thriic.core.local.TagLocalDataSource
 import com.thriic.core.local.UserPreferences
@@ -25,7 +26,7 @@ class SettingsViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState =
         MutableStateFlow(
-            SettingsState(0)
+            SettingsState(tagSize = 0, timeFormat = TimeFormat.DetailedRelative)
         )
     val uiState: StateFlow<SettingsState> = _uiState.asStateFlow()
 
@@ -65,14 +66,20 @@ class SettingsViewModel @Inject constructor(
                 sendMessage("updated $diff tags")
                 update { copy(tagSize = size) }
             }
+
+            is SettingsIntent.ChangeTimeFormat -> {
+                userPreferences.saveTimeFormat(intent.timeFormat)
+                update { copy(timeFormat = intent.timeFormat) }
+            }
         }
     }
 }
 
-data class SettingsState(val tagSize:Int)
+data class SettingsState(val tagSize:Int, val timeFormat: TimeFormat)
 
 sealed interface SettingsIntent {
     data class Export(val callback: (List<LocalInfo>) -> Unit) : SettingsIntent
     data class Import(val content: String) : SettingsIntent
     data object UpdateSearchTags : SettingsIntent
+    data class ChangeTimeFormat(val timeFormat: TimeFormat) : SettingsIntent
 }

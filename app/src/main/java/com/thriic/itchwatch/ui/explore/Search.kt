@@ -455,7 +455,8 @@ fun SearchScreen(viewModel: ExploreViewModel = viewModel(), listState: LazyListS
                             localInfo = localInfo,
                             onChangeStarred = { url ->
                                 viewModel.send(ExploreIntent.AddLocal(url))
-                            }
+                            },
+                            timeFormat = state.timeFormat
                         )
                     }
                 }

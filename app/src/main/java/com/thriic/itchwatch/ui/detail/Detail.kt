@@ -54,6 +54,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.thriic.core.TimeFormat
+import com.thriic.core.formatTime
 import com.thriic.core.formatTimeDifference
 import com.thriic.core.model.File
 import com.thriic.core.model.Game
@@ -78,7 +80,8 @@ fun DetailScreen(
     url: String,
     game: Game,
     localInfo: LocalInfo?,
-    onChangeStarred:(String)->Unit
+    onChangeStarred:(String)->Unit,
+    timeFormat: TimeFormat,
     ) {
     Surface {
         LazyColumn(
@@ -125,9 +128,9 @@ fun DetailScreen(
                         title = game.name,
                         author = game.filterTags.filter(TagType.Author)
                             .joinToString(",") { it.displayName },
-                        updatedTime = game.updatedTime?.formatTimeDifference(),
-                        publishedTime = game.publishedTime?.formatTimeDifference(),
-                        playedTime = localInfo?.lastPlayedTime?.formatTimeDifference(),
+                        updatedTime = game.updatedTime?.formatTime(timeFormat),
+                        publishedTime = game.publishedTime?.formatTime(timeFormat),
+                        playedTime = localInfo?.lastPlayedTime?.formatTime(timeFormat),
                         cardModifier = cardModifier,
                         starred = localInfo?.starred ?: false,
                         onChangeStarred = { starred ->
@@ -142,7 +145,7 @@ fun DetailScreen(
                 }
                 if (game.devLogs.isNotEmpty()) {
                     item {
-                        DevLogCard(cardModifier = cardModifier, devLogs = game.devLogs)
+                        DevLogCard(cardModifier = cardModifier, devLogs = game.devLogs, timeFormat = timeFormat)
                     }
                 }
                 if (game.files.isNotEmpty()) {
@@ -387,7 +390,8 @@ fun FileCard(
 @Composable
 fun DevLogCard(
     cardModifier: Modifier = Modifier,
-    devLogs: List<DevLogItem>
+    devLogs: List<DevLogItem>,
+    timeFormat: TimeFormat
 ) {
     val uriHandler = LocalUriHandler.current
     Card(
@@ -438,7 +442,7 @@ fun DevLogCard(
                 colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 trailingContent = {
                     Text(
-                        devLogItem.pubDate.formatTimeDifference(),
+                        devLogItem.pubDate.formatTime(timeFormat),
                         maxLines = 1,
                         style = MaterialTheme.typography.bodySmall,
                         overflow = TextOverflow.Ellipsis
