@@ -49,8 +49,8 @@
                 <data android:scheme="file" />
                 <data android:host="*" />
                 <data android:mimeType="*/*" />
-                <data android:pathSuffix=".seat" />
-                <data android:pathSuffix=".txt" />
+                <data android:pathSuffix=".iw" />
+                <data android:pathSuffix=".json" />
             </intent-filter>
         </activity>
 
