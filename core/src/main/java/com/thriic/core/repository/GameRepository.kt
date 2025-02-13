@@ -133,7 +133,7 @@ class GameRepository @Inject constructor(
         withLocalInfo:Boolean = false,
         emit: suspend (Result<GameBasic>) -> Unit
     ): Result<GameBasic>? {
-        if (latestGames.any { it.url == url }) {
+        if (gameLocalDataSource.existGame(url)) {
             emit(Result.failure(Exception("Game already exists")))
             return null
         }
