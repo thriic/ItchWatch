@@ -1,6 +1,7 @@
 package com.thriic.core.repository
 
 import android.util.Log
+import com.thriic.core.ImportException
 import com.thriic.core.local.GameLocalDataSource
 import com.thriic.core.model.GameBasic
 import com.thriic.core.model.Game
@@ -134,7 +135,7 @@ class GameRepository @Inject constructor(
         emit: suspend (Result<GameBasic>) -> Unit
     ): Result<GameBasic>? {
         if (gameLocalDataSource.existGame(url)) {
-            emit(Result.failure(Exception("Game already exists")))
+            emit(Result.failure(ImportException.ExistError()))
             return null
         }
         try {
@@ -162,7 +163,7 @@ class GameRepository @Inject constructor(
             return Result.success(gameFull.toBasic(localInfo))
         } catch (e: Exception) {
             failedList.add(url)
-            emit(Result.failure(e))
+            emit(Result.failure(ImportException.NetworkError(e)))
         }
         return null
     }

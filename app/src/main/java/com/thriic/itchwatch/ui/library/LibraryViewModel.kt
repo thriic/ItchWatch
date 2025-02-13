@@ -197,6 +197,7 @@ class LibraryViewModel @Inject constructor(
             }
 
             is LibraryIntent.Remove -> {
+                //TODO delete localInfo
                 val result = repository.deleteGame(intent.url)
                 if (result) {
                     val mutableList = _items.value.toMutableList()

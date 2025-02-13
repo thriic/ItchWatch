@@ -3,6 +3,7 @@ package com.thriic.itchwatch.ui.imports
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.thriic.core.ImportException
 import com.thriic.core.repository.CollectionRepository
 import com.thriic.core.repository.GameRepository
 import com.thriic.itchwatch.Navigator
@@ -82,19 +83,15 @@ class ImportViewModel @Inject constructor(
                         val size = set.size
                         var index = 0
                         var successIndex = 0
-                        update(
-                            _uiState.value.copy(
-                                loading = true,
-                                progressText = "trying $size links from the file"
-                            )
-                        )
+                        var failIndex = 0
+                        update(_uiState.value.copy(loading = true, progressText = "trying $size links from the file"))
                         sendMessage("try $size")
                         repository.addGames(urls = set).collect { result ->
                             index += 1
                             Log.i("Lib ViewModel", "add $result")
-                            if (result.isSuccess) {
-                                successIndex += 1
-                            }
+                            result
+                                .onSuccess { successIndex += 1 }
+                                .onFailure { if(it !is ImportException.ExistError) failIndex += 1   }
                             if (size >= 5) update(
                                 _uiState.value.copy(
                                     progress = index / size.toFloat(),
@@ -103,7 +100,7 @@ class ImportViewModel @Inject constructor(
                             )
                             if (index >= size) {
                                 clearProgress()
-                                sendMessage("added $successIndex/$size")
+                                sendMessage("added $successIndex games, $size in total, ${size-successIndex-failIndex} existed, $failIndex failed")
                             }
                         }
                     }
@@ -124,14 +121,15 @@ class ImportViewModel @Inject constructor(
                     val size = set.size
                     var index = 0
                     var successIndex = 0
+                    var failIndex = 0
                     update(_uiState.value.copy(loading = true, progressText = "trying $size local data"))
                     sendMessage("try $size")
                     repository.addGames(urls = set, withLocalInfo = true).collect { result ->
                         index += 1
                         Log.i("Lib ViewModel", "add $result")
-                        if (result.isSuccess) {
-                            successIndex += 1
-                        }
+                        result
+                            .onSuccess { successIndex += 1 }
+                            .onFailure { if(it !is ImportException.ExistError) failIndex += 1  }
                         if (size >= 5) update(
                             _uiState.value.copy(
                                 progress = index / size.toFloat(),
@@ -140,7 +138,7 @@ class ImportViewModel @Inject constructor(
                         )
                         if (index >= size) {
                             clearProgress()
-                            sendMessage("added $successIndex/$size")
+                            sendMessage("added $successIndex games, $size in total, ${size-successIndex-failIndex} existed, $failIndex failed")
                         }
                     }
                 }
@@ -157,6 +155,7 @@ class ImportViewModel @Inject constructor(
                         val size = collection.gameCells.size
                         var index = 0
                         var successIndex = 0
+                        var failIndex = 0
                         update(
                             _uiState.value.copy(
                                 loading = true,
@@ -166,9 +165,9 @@ class ImportViewModel @Inject constructor(
                         repository.addGames(collection.gameCells).collect { result ->
                             index += 1
                             Log.i("Lib ViewModel", "add $result")
-                            if (result.isSuccess) {
-                                successIndex += 1
-                            }
+                            result
+                                .onSuccess { successIndex += 1 }
+                                .onFailure { if(it !is ImportException.ExistError) failIndex += 1  }
                             if (size >= 5) update(
                                 _uiState.value.copy(
                                     progress = index / size.toFloat(),
@@ -177,7 +176,7 @@ class ImportViewModel @Inject constructor(
                             )
                             if (index >= size) {
                                 clearProgress()
-                                sendMessage("added $successIndex/$size")
+                                sendMessage("added $successIndex games, $size in total, ${size-successIndex-failIndex} existed, $failIndex failed")
                             }
                         }
                     }
