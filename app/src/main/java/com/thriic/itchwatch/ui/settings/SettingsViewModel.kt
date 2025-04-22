@@ -26,7 +26,12 @@ class SettingsViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState =
         MutableStateFlow(
-            SettingsState(tagSize = 0, timeFormat = TimeFormat.DetailedRelative)
+            SettingsState(
+                tagSize = 0,
+                timeFormat = TimeFormat.DetailedRelative,
+                failureIcon = false,
+                threadCount = 5
+            )
         )
     val uiState: StateFlow<SettingsState> = _uiState.asStateFlow()
 
@@ -71,15 +76,33 @@ class SettingsViewModel @Inject constructor(
                 userPreferences.saveTimeFormat(intent.timeFormat)
                 update { copy(timeFormat = intent.timeFormat) }
             }
+
+            is SettingsIntent.ChangeThreadCount -> {
+                userPreferences.saveThreadCount(intent.count)
+                update { copy(threadCount = intent.count) }
+            }
+        }
+    }
+    init {
+        viewModelScope.launch {
+            userPreferences.threadCountFlow.collect {
+                update { copy(threadCount = it) }
+            }
         }
     }
 }
 
-data class SettingsState(val tagSize:Int, val timeFormat: TimeFormat)
+data class SettingsState(
+    val tagSize: Int,
+    val timeFormat: TimeFormat,
+    val failureIcon: Boolean,
+    val threadCount: Int
+)
 
 sealed interface SettingsIntent {
     data class Export(val callback: (List<LocalInfo>) -> Unit) : SettingsIntent
     data class Import(val content: String) : SettingsIntent
     data object UpdateSearchTags : SettingsIntent
     data class ChangeTimeFormat(val timeFormat: TimeFormat) : SettingsIntent
+    data class ChangeThreadCount(val count: Int) : SettingsIntent
 }

@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -76,6 +77,16 @@ class UserPreferences @Inject constructor(private val context:Context) {
         .map { preferences ->
             preferences[PreferencesKeys.SETTING_SEARCH_TYPE] ?: false
         }
+
+    suspend fun saveThreadCount(value: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.FETCH_THREAD_COUNT] = value
+        }
+    }
+    val threadCountFlow: Flow<Int> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.FETCH_THREAD_COUNT] ?: 5
+        }
 }
 
 object PreferencesKeys {
@@ -83,4 +94,5 @@ object PreferencesKeys {
     val SEARCH_SORT_TYPE = stringPreferencesKey("search_sort_type")
     val SETTING_TIME_FORMAT = stringPreferencesKey("time_format")
     val SETTING_SEARCH_TYPE = booleanPreferencesKey("search_type")
+    val FETCH_THREAD_COUNT = intPreferencesKey("thread_count")
 }

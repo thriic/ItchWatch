@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import javax.inject.Inject
+import kotlin.properties.Delegates
 
 
 @HiltViewModel
@@ -28,6 +29,7 @@ class LibraryViewModel @Inject constructor(
 ) : ViewModel() {
     private val _items = MutableStateFlow<List<GameBasic>>(emptyList())
     val items: StateFlow<List<GameBasic>> = _items
+    private var threadCount by Delegates.notNull<Int>()
 
     private val _uiState = MutableStateFlow(
         LibraryUiState(
@@ -71,9 +73,10 @@ class LibraryViewModel @Inject constructor(
                 var successIndex = 0
                 var index = 0
                 update(_uiState.value.copy(loading = true))
-                repository.getGameBasics(true).collect { result ->
+                repository.refreshGameBasics(threadCount).collect { result ->
                     index += 1
                     Log.i("Lib ViewModel", "refresh $result")
+                    if(result.isFailure) Log.i("Lib ViewModel", "refresh ${result.exceptionOrNull()?.message}")
                     if (result.isSuccess) {
                         successIndex += 1
                         _items.value =
@@ -309,6 +312,11 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             userPreferences.timeFormatFlow.collect {
                 update(_uiState.value.copy(timeFormat = it))
+            }
+        }
+        viewModelScope.launch {
+            userPreferences.threadCountFlow.collect {
+                threadCount = it
             }
         }
     }

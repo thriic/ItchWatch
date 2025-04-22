@@ -6,6 +6,7 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonPrimitive
 import com.google.gson.JsonSerializationContext
 import com.google.gson.JsonSerializer
+import kotlinx.coroutines.delay
 import java.lang.reflect.Type
 import java.time.Instant
 import java.time.LocalDateTime
@@ -93,4 +94,32 @@ fun LocalDateTime.formatTimeDifference(): String {
         yearsDifference < 1 -> "$monthsDifference months ago"
         else -> "$yearsDifference years ago"
     }
+}
+
+
+suspend fun <T> withRetry(
+    maxRetries: Int = 3,
+    initialDelay: Long = 1000,
+    shouldRetry: (Throwable) -> Boolean,
+    block: suspend () -> T
+): T {
+    require(maxRetries >= 0) { "maxRetries should be >= 0" }
+
+    var currentDelay = initialDelay
+    var lastError: Throwable? = null
+
+    repeat(maxRetries + 1) { attempt ->
+        //lastError?.let { throw it }
+        try {
+            return block()
+        } catch (e: Throwable) {
+            lastError = e
+            if (attempt < maxRetries && shouldRetry(e)) {
+                delay(currentDelay)
+                currentDelay *= 2
+            }
+        }
+    }
+
+    throw lastError ?: error("Unexpected state")
 }

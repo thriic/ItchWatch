@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thriic.core.ImportException
+import com.thriic.core.local.UserPreferences
 import com.thriic.core.repository.CollectionRepository
 import com.thriic.core.repository.GameRepository
 import com.thriic.itchwatch.Navigator
@@ -15,14 +16,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.properties.Delegates
 
 
 @HiltViewModel
 class ImportViewModel @Inject constructor(
     private val repository: GameRepository,
     private val collectionRepository: CollectionRepository,
-    private val navigator: Navigator
+    private val navigator: Navigator,
+    private val userPreferences: UserPreferences
 ) : ViewModel() {
+    private var threadCount by Delegates.notNull<Int>()
 
     private val _uiState = MutableStateFlow(
         ImportState(
@@ -86,7 +90,7 @@ class ImportViewModel @Inject constructor(
                         var failIndex = 0
                         update(_uiState.value.copy(loading = true, progressText = "trying $size links from the file"))
                         sendMessage("try $size")
-                        repository.addGames(urls = set).collect { result ->
+                        repository.addGames(urls = set,threadCount).collect { result ->
                             index += 1
                             Log.i("Lib ViewModel", "add $result")
                             result
@@ -124,7 +128,7 @@ class ImportViewModel @Inject constructor(
                     var failIndex = 0
                     update(_uiState.value.copy(loading = true, progressText = "trying $size local data"))
                     sendMessage("try $size")
-                    repository.addGames(urls = set, withLocalInfo = true).collect { result ->
+                    repository.addGames(urls = set, withLocalInfo = true, buffer = threadCount).collect { result ->
                         index += 1
                         Log.i("Lib ViewModel", "add $result")
                         result
@@ -162,7 +166,7 @@ class ImportViewModel @Inject constructor(
                                 progressText = "fetching $size games from ${collection.title}"
                             )
                         )
-                        repository.addGames(collection.gameCells).collect { result ->
+                        repository.addGames(collection.gameCells, buffer = threadCount).collect { result ->
                             index += 1
                             Log.i("Lib ViewModel", "add $result")
                             result
@@ -183,6 +187,13 @@ class ImportViewModel @Inject constructor(
                     .onFailure {
                         clearProgress()
                     }
+            }
+        }
+    }
+    init {
+        viewModelScope.launch {
+            userPreferences.threadCountFlow.collect {
+                threadCount = it
             }
         }
     }

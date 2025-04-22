@@ -11,6 +11,7 @@ import com.thriic.core.network.DevLogRemoteDataSource
 import com.thriic.core.network.GameRemoteDataSource
 import com.thriic.core.network.model.DevLog
 import com.thriic.core.network.model.GameCell
+import com.thriic.core.withRetry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
@@ -34,52 +35,69 @@ class GameRepository @Inject constructor(
     private val failedList = mutableListOf<String>()
 
     //fetch a list of game basics
-    //when refresh is true, fetch from remote source and update in database
-    //when false, fetch from local source
-    fun getGameBasics(refresh: Boolean = false): Flow<Result<GameBasic>> =
+    //fetch from remote source and update in database
+    fun refreshGameBasics(buffer: Int = 5): Flow<Result<GameBasic>> =
         channelFlow {
-            if (refresh) {
-                flow {
-                    for (game in latestGames) {
-                        emit(game)
-                    }
+            flow {
+                for (game in latestGames) {
+                    emit(game)
                 }
-                    .map { game ->
-                        async(Dispatchers.IO) {
-                            try {
-                                val gameFull =
+            }
+                .map { game ->
+                    async(Dispatchers.IO) {
+                        try {
+                            val gameFull =
+                                withRetry(
+                                    maxRetries = 3,
+                                    initialDelay = 1000,
+                                    shouldRetry = { e ->
+                                        e.message?.contains("Too Many Requests") == true
+                                    }
+                                ) {
                                     gameRemoteDataSource.fetchGameData(game.url)
                                         .map { it.toGameFull() }
                                         .getOrThrow()
-                                latestGames =
-                                    latestGames.map { if (it.url == game.url) gameFull else it }
-                                        .toMutableList() //update member variable
-                                gameLocalDataSource.updateGames(gameFull)//update to database
-                                val basicWithLocal = gameFull.toBasic(getLocalInfo(gameFull.url))
-                                return@async Result.success(basicWithLocal)
-                            } catch (e: Exception) {
-                                failedList.add(game.url)
-                                this@channelFlow.send(Result.failure<GameBasic>(e))
-                            }
-                            return@async null
+                                }
+                            latestGames =
+                                latestGames.map { if (it.url == game.url) gameFull else it }
+                                    .toMutableList() //update member variable
+                            gameLocalDataSource.updateGames(gameFull)//update to database
+                            val basicWithLocal = gameFull.toBasic(getLocalInfo(gameFull.url))
+                            return@async Result.success(basicWithLocal)
+                        } catch (e: Exception) {
+                            failedList.add(game.url)
+                            this@channelFlow.send(Result.failure<GameBasic>(e))
                         }
+                        return@async null
                     }
-                    .buffer(5)
-                    .collect { deferred ->
-                        val gameBasic = deferred.await()
-                        if (gameBasic != null)
-                            this@channelFlow.send(gameBasic)
-                    }
-            } else {
-                latestGames = gameLocalDataSource.getLocalGames().toMutableList()
-                latestGames.forEach { gameFull ->
-                    this@channelFlow.send(Result.success(gameFull.toBasic(getLocalInfo(gameFull.url))))
                 }
+                .buffer(buffer)
+                .collect { deferred ->
+                    val gameBasic = deferred.await()
+                    if (gameBasic != null)
+                        this@channelFlow.send(gameBasic)
+                }
+
+
+        }
+
+
+    //fetch from local source
+    fun getGameBasics(): Flow<Result<GameBasic>> =
+        channelFlow {
+            latestGames = gameLocalDataSource.getLocalGames().toMutableList()
+            latestGames.forEach { gameFull ->
+                this@channelFlow.send(Result.success(gameFull.toBasic(getLocalInfo(gameFull.url))))
             }
-        }.buffer(5)
+        }
+
 
     //import games
-    fun addGames(urls: Set<String>, withLocalInfo: Boolean = false): Flow<Result<GameBasic>> = channelFlow {
+    fun addGames(
+        urls: Set<String>,
+        buffer: Int,
+        withLocalInfo: Boolean = false
+    ): Flow<Result<GameBasic>> = channelFlow {
         flow {
             for (url in urls) {
                 Log.i("GameRepository", url)
@@ -88,10 +106,10 @@ class GameRepository @Inject constructor(
         }
             .map { url ->
                 async(Dispatchers.IO) {
-                    addGameAndEmit(url,withLocalInfo = withLocalInfo) { this@channelFlow.send(it) }
+                    addGameAndEmit(url, withLocalInfo = withLocalInfo) { this@channelFlow.send(it) }
                 }
             }
-            .buffer(8)
+            .buffer(buffer)
             .collect { deferred ->
                 val gameBasic = deferred.await()
                 if (gameBasic != null)
@@ -101,7 +119,7 @@ class GameRepository @Inject constructor(
 
     //import game from collection,
     //with blurb
-    fun addGames(gameCells: List<GameCell>): Flow<Result<GameBasic>> = channelFlow {
+    fun addGames(gameCells: List<GameCell>, buffer: Int): Flow<Result<GameBasic>> = channelFlow {
         flow {
             for (gameCell in gameCells) {
                 Log.i("GameRepository", gameCell.url)
@@ -113,7 +131,7 @@ class GameRepository @Inject constructor(
                     addGameAndEmit(gameCell.url, gameCell.blurb) { this@channelFlow.send(it) }
                 }
             }
-            .buffer(8)
+            .buffer(buffer)
             .collect { deferred ->
                 val gameBasic = deferred.await()
                 if (gameBasic != null)
@@ -130,8 +148,8 @@ class GameRepository @Inject constructor(
 
     private suspend fun addGameAndEmit(
         url: String,
-        blurb : String? = null,
-        withLocalInfo:Boolean = false,
+        blurb: String? = null,
+        withLocalInfo: Boolean = false,
         emit: suspend (Result<GameBasic>) -> Unit
     ): Result<GameBasic>? {
         if (gameLocalDataSource.existGame(url)) {
@@ -140,9 +158,17 @@ class GameRepository @Inject constructor(
         }
         try {
             //find tempGame first
-            val gameFull = tempGames.find { it.url == url }
-                ?: gameRemoteDataSource.fetchGameData(url).map { it.toGameFull() }
-                    .getOrThrow()
+            val gameFull = withRetry(
+                maxRetries = 3,
+                initialDelay = 1000,
+                shouldRetry = { e ->
+                    e.message?.contains("Too Many Requests") == true
+                }
+            ) {
+                tempGames.find { it.url == url }
+                    ?: gameRemoteDataSource.fetchGameData(url).map { it.toGameFull() }
+                        .getOrThrow()
+            }
             latestGames.add(gameFull)//add to member variable
             gameLocalDataSource.insertGames(gameFull)//insert to database
             //always init localInfo when add a new game
@@ -187,6 +213,7 @@ class GameRepository @Inject constructor(
             gameFull.toBasic(getLocalInfo(gameFull.url))
         }
     }
+
     fun size() = latestGames.size
 
     suspend fun getGameFull(url: String, refresh: Boolean = false): Game {
@@ -194,22 +221,29 @@ class GameRepository @Inject constructor(
         return if (refresh || game == null) {
             //fetch and update to temp
             //wont insert to database
-            tempGames.find { it.url == url } ?: gameRemoteDataSource.fetchGameData(url).getOrThrow().toGameFull().also { tempGames.add(it) }
+            tempGames.find { it.url == url } ?: gameRemoteDataSource.fetchGameData(url).getOrThrow()
+                .toGameFull().also { tempGames.add(it) }
         } else {
             game
         }
     }
 
-    suspend fun getLocalInfo(url: String):LocalInfo{
+    suspend fun getLocalInfo(url: String): LocalInfo {
         //logically,it wont be null
         return gameLocalDataSource.getLocalInfo(url)!!
     }
 
-    suspend fun getAllLocalInfo():List<LocalInfo>{
+    suspend fun getAllLocalInfo(): List<LocalInfo> {
         return gameLocalDataSource.getAllLocalInfo()
     }
 
-    suspend fun updateLocalInfo(url:String, blurb:String? = null, lastPlayedVersion:String? = null, lastPlayedTime: LocalDateTime? = null, starred:Boolean? = null): LocalInfo {
+    suspend fun updateLocalInfo(
+        url: String,
+        blurb: String? = null,
+        lastPlayedVersion: String? = null,
+        lastPlayedTime: LocalDateTime? = null,
+        starred: Boolean? = null
+    ): LocalInfo {
         val oldLocalInfo = getLocalInfo(url)
         val updatedLocalInfo = oldLocalInfo.copy(
             blurb = blurb ?: oldLocalInfo.blurb,

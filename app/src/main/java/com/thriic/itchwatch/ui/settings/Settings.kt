@@ -15,12 +15,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,7 +39,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.thriic.core.TimeFormat
@@ -61,14 +69,14 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
     }
     var checked by remember { mutableStateOf(true) }
     var openDialog by remember { mutableStateOf(false) }
-    var shareDialog by remember { mutableStateOf(false) }
+    var threadDialog by remember { mutableStateOf(false) }
     var importDialog by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        "设置",
+                        "Settings",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -83,13 +91,13 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                 item {
                     SettingSubTitle("basic")
                     SettingItem(
-                        modifier = Modifier.clickable { openDialog = true },
-                        title = "hi",
-                        description = "prefer"
+                        modifier = Modifier.clickable { threadDialog = true },
+                        title = "Fetch Concurrency",
+                        description = "The maximum number of threads"
                     ) {
                         Text(
-                            modifier = it,
-                            text = "des"
+                            modifier = it.padding(end = 8.dp),
+                            text = state.threadCount.toString()
                         )
                     }
                     HorizontalDivider(
@@ -97,12 +105,12 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                             .fillMaxWidth()
                             .padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
                     )
+
                 }
 
                 item {
                     SettingSubTitle("time format")
                     SettingItem(
-                        modifier = Modifier.clickable { openDialog = true },
                         title = "Absolute",
                         description = "2024/5/29"
                     ) {
@@ -115,7 +123,6 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         )
                     }
                     SettingItem(
-                        modifier = Modifier.clickable { openDialog = true },
                         title = "Relative",
                         description = "x days ago"
                     ) {
@@ -128,7 +135,6 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
                         )
                     }
                     SettingItem(
-                        modifier = Modifier.clickable { openDialog = true },
                         title = "Detailed Relative",
                         description = "x years/months/days/minutes ago"
                     ) {
@@ -193,6 +199,12 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             }
         }
     )
+    if (threadDialog) {
+        ThreadDialog(
+            onConfirm = { viewModel.send(SettingsIntent.ChangeThreadCount(it)) },
+            onDismiss = { threadDialog = false }
+        )
+    }
 
 //    if (openDialog) {
 //        var length by rememberSaveable { mutableStateOf(uiState.aspect.first.toString()) }
@@ -242,8 +254,61 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
 }
 
 @Composable
+fun ThreadDialog(
+    onConfirm: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var inputText by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "Fetch Concurrency") },
+        text = {
+            Column {
+                TextField(
+                    value = inputText,
+                    onValueChange = {
+                        inputText = it.filter { char -> char.isDigit() }
+                    },
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        keyboardType = KeyboardType.Number
+                    ),
+                    singleLine = true,
+                    placeholder = { Text("input a number") }
+                )
+                Text(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    text = "The maximum number of threads used for simultaneous network requests\n" +
+                            "Excessive threads could trigger server-side request rejections (5-20 recommended)",
+                    fontWeight = FontWeight.Light,
+                    fontSize = 12.sp
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val number = inputText.toIntOrNull() ?: 0
+                    onConfirm(number)
+                    onDismiss()
+                }
+            ) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss
+            ) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
 fun SettingItem(
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     title: String,
     description: String = "",
     content: @Composable (Modifier) -> Unit
@@ -272,5 +337,13 @@ fun SettingItem(
 fun SettingSubTitle(title: String) {
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         Text(text = title, color = MaterialTheme.colorScheme.surfaceTint, fontSize = 14.sp)
+    }
+}
+
+@Composable
+@Preview
+fun DialogPreview() {
+    Surface {
+        ThreadDialog({}, {})
     }
 }
